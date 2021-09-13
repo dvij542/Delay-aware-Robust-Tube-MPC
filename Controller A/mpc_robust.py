@@ -2,7 +2,7 @@
 
 #!/usr/bin/env python3
 
-from MPC.adaptive_kalman_filter import update_delay_time_estimate
+from adaptive_kalman_filter import update_delay_time_estimate
 from casadi import *
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
@@ -25,7 +25,7 @@ import math
 ################ Parameters ####################
 T = .08     # Time horizon
 N = 8 # number of control intervals
-speed = 10
+speed = 5
 save_path_after = 4
 wait_time = -1 # If -1, adaptive kalman filter will be used to predict it
 Td = 0.0 # Actuator processing delay
@@ -529,7 +529,7 @@ def mpcCallback():
     pub3.publish(predicted_trajectory)
     pub5.publish(reference_trajectory)
     pub6.publish(boundary_line)
-    
+    print("Published ", buff_con)
     t2 = rospy.get_time()
     if wait_time < 0 :
         rospy.sleep(0.0 + 0.0*math.sin(t2/3.5))#1-(t2-t1))

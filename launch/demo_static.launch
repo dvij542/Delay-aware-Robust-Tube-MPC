@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+<arg name="rvizconfig" default="$(find car_demo)/rviz/demo.rviz" />
+<include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="verbose" value="true"/>
+    <arg name="world_name" value="$(find car_demo)/worlds/mcity2.world"/>
+</include>
+<arg name="model" default="$(find prius_description)/urdf/prius.urdf"/>
+<param name="robot_description" textfile="$(arg model)"/>
+
+<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param /robot_description -urdf -x 3 -y -12 -z 0.2 -model prius">
+  <remap from="/prius/front_left_laser/scan" to="/prius_obs/front_left_laser/scan"/>
+  <remap from="/prius/front_right_laser/scan" to="/prius_obs/front_right_laser/scan"/>
+</node>
+<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" />
+<node pkg="fake_localization" type="fake_localization" name="fake_localization">
+  <!-- <remap from="base_pose_ground_truth" to="/prius/base_pose_ground_truth"/> -->
+</node>
+<node pkg="tf2_ros" type="static_transform_publisher" name="very_inaccurate_odom" args="0 0 0 0 0 0 odom base_link"/>
+<node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+</launch>

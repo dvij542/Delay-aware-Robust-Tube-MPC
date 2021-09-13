@@ -60,9 +60,9 @@ def prius_pub():
         K_mat = get_K(0.1,curr_yaw,curr_speed,Q_robust,R_robust,N)
         correction = K_mat*curr_state_diff
         # print(correction)
-        prius_vel.steer = (buffer_cmd[i].pose.position.x- (180/math.pi)*correction[1,0]) / 40
-        prius_vel.throttle = max(0,buffer_cmd[i].pose.position.z + correction[0,0])
-        prius_vel.brake = -min(0,buffer_cmd[i].pose.position.z+ correction[0,0])
+        prius_vel.steer = (buffer_cmd[i].pose.position.x)/40#- (180/math.pi)*correction[1,0]) / 40
+        prius_vel.throttle = max(0,buffer_cmd[i].pose.position.z) #+ correction[0,0])
+        prius_vel.brake = -min(0,buffer_cmd[i].pose.position.z)#+ correction[0,0])
     else :
         rospy.sleep(buffer_cmd[0].pose.position.y - curr_time)
         prius_vel.steer = buffer_cmd[0].pose.position.x / 40
