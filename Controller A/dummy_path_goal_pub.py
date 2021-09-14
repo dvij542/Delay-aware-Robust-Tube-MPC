@@ -25,13 +25,13 @@ from geometry_msgs.msg import PointStamped
 def pathCallback(pathdata):
 
     pathdata.header.stamp = rospy.Time.now()
-    with open('src/hybrid_astar/src/dummypath.pkl', 'wb') as file:
+    with open('dummypath.pkl', 'wb') as file:
         pickle.dump(pathdata,file)
 
 def goalCallback(goaldata):
     
     goaldata.header.stamp = rospy.Time.now()
-    with open('src/hybrid_astar/src/dummygoal.pkl', 'wb') as file:
+    with open('dummygoal.pkl', 'wb') as file:
         pickle.dump(goaldata,file)
 
 def start():
@@ -44,9 +44,9 @@ def start():
     # rospy.Subscriber("hybrid_astar_goal_dummy", PoseStamped, goalCallback,queue_size=1)
     rospy.Subscriber("hybrid_astar_goal_dummy", PoseStamped, goalCallback,queue_size=1)
     # rospy.spin()
-    with open('src/hybrid_astar/src/dummypath.pkl', 'rb') as file:
+    with open('dummypath.pkl', 'rb') as file:
         pathdata = pickle.load(file)
-    with open('src/hybrid_astar/src/dummygoal.pkl', 'rb') as file:
+    with open('dummygoal.pkl', 'rb') as file:
         goaldata = pickle.load(file)
     r=rospy.Rate(20)
     first_time = True
