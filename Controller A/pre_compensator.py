@@ -54,7 +54,7 @@ def prius_pub():
         
         # Need to interpolate to get nominal state at current time 
         time_diff = pose.pose.position.y - curr_time
-        interp_ratio = time_diff/.1
+        interp_ratio = 1 - time_diff/.1
         dx = curr_x - (1-interp_ratio)*buffer_cmd[i].pose.orientation.x - interp_ratio*buffer_cmd[i+1].pose.orientation.x
         dy = curr_y - (1-interp_ratio)*buffer_cmd[i].pose.orientation.y - interp_ratio*buffer_cmd[i+1].pose.orientation.y
         dyaw = curr_yaw - (1-interp_ratio)*buffer_cmd[i].pose.orientation.z - interp_ratio*buffer_cmd[i+1].pose.orientation.z
