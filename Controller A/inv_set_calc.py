@@ -161,10 +161,8 @@ def get_inv_set(DT,theta,v,Q,R,N,without_steering=False) :
     return inv_set
 
 def get_K(DT,theta,v,Q,R,N,without_steering = False) :
-    A,B,C = get_linear_model_matrix(v, theta, 0, DT,without_steering)
-    w = Polytope(lb=(-0.01,-0.01,-0.01,-0.01,-0.01), ub=(0.01,0.01,0.01,0.01,0.01))
+    A,B,_ = get_linear_model_matrix(v, theta, 0, DT,without_steering)
     K, _, _ = dlqr(A,B,Q,R)
-    Ak = A - B * K
     return K
 
 def get_inv_set_test(DT,theta,phi,v,Q,R,N) :
@@ -197,6 +195,11 @@ def get_inv_set_test(DT,theta,phi,v,Q,R,N) :
     # print(Uc_robust.V)
     return x_max,y_max,abs(Uc_robust.V[0,0]),abs(Uc_robust.V[0,1])
 
+Q_robust = np.matrix(np.diag(np.array([.1,.1,.1,.1,.1])))
+R_robust = np.matrix(np.diag(np.array([1,1])))
+N = 8
+
+print(get_K(0.1,0,5,Q_robust,R_robust,N))
 # x_maxess = []
 # y_maxess = []
 # a_maxess = []

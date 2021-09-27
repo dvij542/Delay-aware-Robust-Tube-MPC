@@ -26,9 +26,11 @@ Nt = 30
 forgetting_factor = (Nt-1)/Nt
 
 def update_delay_time_estimate(z) :
+    global FIRST_TIME
     global Theta,x_hat,P,Q,e_bar,R,w_bar,F
     # print(Theta[0,0], Theta[1,0])
     if FIRST_TIME :
+        FIRST_TIME = False
         x_hat = z
         return x_hat,0
     x_hat_bar = Theta[0,0]*x_hat + Theta[1,0]
@@ -51,5 +53,6 @@ def update_delay_time_estimate(z) :
     F = F - np.matmul(np.matmul(np.matmul(F,phi),phi.T),F)/(forgetting_factor+np.matmul(np.matmul(phi.T,F),phi))
     F/=forgetting_factor
     Theta = Theta + np.matmul(F,phi)*(x_hat-x_hat_bar)
+    print("Returned ", Theta[0,0]*x_hat + Theta[1,0], math.sqrt(P))
     return Theta[0,0]*x_hat + Theta[1,0], math.sqrt(P)
 

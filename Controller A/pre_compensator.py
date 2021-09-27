@@ -27,8 +27,8 @@ buffer_cmd = [None]*8 # Buffer
 has_started = False
 save_at = 0
 
-Q_robust = np.matrix(np.diag(np.array([1,1,1,1,1])))
-R_robust = np.matrix(np.diag(np.array([.1,.1])))
+Q_robust = np.matrix(np.diag(np.array([.1,.1,.1,.1,.1])))
+R_robust = np.matrix(np.diag(np.array([1,1])))
 N = 8
 
 iter0 = 0
@@ -51,18 +51,23 @@ def prius_pub():
         i = i + 1
     if i!= 0 :
         i = i - 1
-        dx = curr_x - buffer_cmd[i].pose.orientation.x
-        dy = curr_y - buffer_cmd[i].pose.orientation.y
-        dyaw = curr_yaw - buffer_cmd[i].pose.orientation.z
-        dvel = curr_speed - buffer_cmd[i].pose.orientation.w
-        dsteer = curr_steering - (buffer_cmd[i].header.stamp.secs/1000 - 2)
+        
+        # Need to interpolate to get nominal state at current time 
+        time_diff = pose.pose.position.y - curr_time
+        interp_ratio = time_diff/.1
+        dx = curr_x - (1-interp_ratio)*buffer_cmd[i].pose.orientation.x - interp_ratio*buffer_cmd[i+1].pose.orientation.x
+        dy = curr_y - (1-interp_ratio)*buffer_cmd[i].pose.orientation.y - interp_ratio*buffer_cmd[i+1].pose.orientation.y
+        dyaw = curr_yaw - (1-interp_ratio)*buffer_cmd[i].pose.orientation.z - interp_ratio*buffer_cmd[i+1].pose.orientation.z
+        dvel = curr_speed - (1-interp_ratio)*buffer_cmd[i].pose.orientation.w - interp_ratio*buffer_cmd[i+1].pose.orientation.w
+        dsteer = curr_steering - (1-interp_ratio)*(buffer_cmd[i].header.stamp.secs/1000 - 2) - interp_ratio*(buffer_cmd[i+1].header.stamp.secs/1000 - 2)
+        
         curr_state_diff = np.matrix(np.array([[dx],[dy],[dvel],[dyaw],[dsteer]]))
         K_mat = get_K(0.1,curr_yaw,curr_speed,Q_robust,R_robust,N)
         correction = K_mat*curr_state_diff
-        # print(correction)
-        prius_vel.steer = (buffer_cmd[i].pose.position.x)/40#- (180/math.pi)*correction[1,0]) / 40
-        prius_vel.throttle = max(0,buffer_cmd[i].pose.position.z) #+ correction[0,0])
-        prius_vel.brake = -min(0,buffer_cmd[i].pose.position.z)#+ correction[0,0])
+        # print(correction, curr_steering, (1-interp_ratio)*(buffer_cmd[i].header.stamp.secs/1000 - 2) + interp_ratio*(buffer_cmd[i+1].header.stamp.secs/1000 - 2))
+        prius_vel.steer = (buffer_cmd[i].pose.position.x - (180/math.pi)*correction[1,0]) / 40
+        prius_vel.throttle = max(0,buffer_cmd[i].pose.position.z+ correction[0,0])
+        prius_vel.brake = -min(0,buffer_cmd[i].pose.position.z+ correction[0,0])
     else :
         rospy.sleep(buffer_cmd[0].pose.position.y - curr_time)
         prius_vel.steer = buffer_cmd[0].pose.position.x / 40
@@ -102,22 +107,11 @@ def callback_tf(data):
     global curr_steering
     for tf_data in data.transforms :
         if tf_data.header.frame_id == "chassis" and tf_data.child_frame_id == "fr_axle" :
-            if iter0==0 :
-                init_steering_x = tf_data.transform.rotation.x
-                init_steering_y = tf_data.transform.rotation.y
-                init_steering_z = tf_data.transform.rotation.z
-                init_steering_w = tf_data.transform.rotation.w
-                
-            iter0 = iter0+1
-            if iter0 >= 100 :
-                print(gt_steering)
-                np.savetxt("front_right_wheel_0.5.csv",np.array(gt_steering))
-                print("Saved")
-                exit()
             x = tf_data.transform.rotation.x #- init_steering_x
             y = tf_data.transform.rotation.y #- init_steering_y
             z = tf_data.transform.rotation.z #- init_steering_z
             w = tf_data.transform.rotation.w #- init_steering_w
+            print("Updated steering angle")
             _,_,curr_steering = convert_xyzw_to_rpy(x,y,z,w)
 
 # Called at high frequency with updated position of the vehicle
@@ -204,6 +198,7 @@ def start():
     pub = rospy.Publisher(ackermann_cmd_topic, Control, queue_size=1)
     rospy.Subscriber("base_pose_ground_truth", Odometry, callback_feedback, queue_size=1)
     rospy.Subscriber("cmd_delta", Path, callback_delta, queue_size=1)
+    rospy.Subscriber("/tf", TFMessage, callback_tf,queue_size=1)
     
     rospy.spin()
 

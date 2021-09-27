@@ -44,9 +44,9 @@ def start():
     # rospy.Subscriber("hybrid_astar_goal_dummy", PoseStamped, goalCallback,queue_size=1)
     rospy.Subscriber("hybrid_astar_goal_dummy", PoseStamped, goalCallback,queue_size=1)
     # rospy.spin()
-    with open('dummypath.pkl', 'rb') as file:
+    with open('Delay aware Robust Tube MPC/Controller A/dummypath.pkl', 'rb') as file:
         pathdata = pickle.load(file)
-    with open('dummygoal.pkl', 'rb') as file:
+    with open('Delay aware Robust Tube MPC/Controller A/dummygoal.pkl', 'rb') as file:
         goaldata = pickle.load(file)
     r=rospy.Rate(20)
     first_time = True

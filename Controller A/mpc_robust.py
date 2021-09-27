@@ -6,6 +6,9 @@ from adaptive_kalman_filter import update_delay_time_estimate
 from casadi import *
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PolygonStamped
+from geometry_msgs.msg import Polygon
+from geometry_msgs.msg import Point32
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseArray
 from nav_msgs.msg import Path
@@ -23,10 +26,10 @@ import rospy
 import math
 
 ################ Parameters ####################
-T = .08     # Time horizon
+T = .1     # Time horizon
 N = 8 # number of control intervals
 speed = 5
-save_path_after = 4
+save_path_after = 10
 wait_time = -1 # If -1, adaptive kalman filter will be used to predict it
 Td = 0.0 # Actuator processing delay
 gt_steering = 0 # Variable to communicate current value of steering angle
@@ -44,7 +47,7 @@ scenario = 'static'
 time_estimates = []
 planned_paths = []
 time_to_finish = 0
-obstacle_points = np.array([[22.5,-17],[22.5,-10],[31,-10],[31,-17]]) # Static obstacle
+obstacle_points = np.array([[22,-18],[22,-10],[32,-10],[32,-18]]) # Static obstacle
 inv_set = [] # Invariant set, Z
 
 L = 3 # Length of the vehicle in m
@@ -213,9 +216,19 @@ def obsPosCallback(posedata) :
     _,_,yaw = convert_xyzw_to_rpy(posedata.pose.pose.orientation.x,posedata.pose.pose.orientation.y,posedata.pose.pose.orientation.z,posedata.pose.pose.orientation.w)
     rot_mat = np.array([[math.cos(yaw),math.sin(yaw)],[math.sin(-yaw),math.cos(yaw)]])
     c_obst = np.array([[x_obst,y_obst]])
-    dims = np.array([[-1,-1],[-1,1],[4,1],[4,-1]])
+    dims = np.array([[-1,-1],[-1,1],[3,1],[3,-1]])
     obstacle_points = c_obst + np.matmul(dims,rot_mat)
-
+    obs_draw = PolygonStamped()
+    obs_draw.header.frame_id='map'
+    # obstacle_points1 = np.array([[22,-17],[22,-9],[33,-9],[33,-17]])
+    if scenario == 'dynamic' :
+        for p in obstacle_points :
+            temp_point = Point32()
+            temp_point.x = p[0]
+            temp_point.y = p[1]
+            obs_draw.polygon.points.append(temp_point)
+        pub_obs.publish(obs_draw)
+            
 def convert_xyzw_to_rpy(x, y, z, w):
         """
         Convert a quaternion into euler angles (roll, pitch, yaw)
@@ -251,6 +264,17 @@ def callback_tf(data):
             r,p,yaw = convert_xyzw_to_rpy(x,y,z,w)
             gt_steering = yaw
             print("Updated GT_steering, ", gt_steering)
+            obs_draw = PolygonStamped()
+            obs_draw.header.frame_id='map'
+            # obstacle_points1 = np.array([[22,-17],[22,-9],[33,-9],[33,-17]])
+            if scenario == 'static' :
+                for p in obstacle_points :
+                    temp_point = Point32()
+                    temp_point.x = p[0]
+                    temp_point.y = p[1]
+                    obs_draw.polygon.points.append(temp_point)
+                pub_obs.publish(obs_draw)
+                # print("Obstacle mark published")
 
 # Called when new path is received from planner
 def pathCallback(pathdata):
@@ -532,10 +556,10 @@ def mpcCallback():
     print("Published ", buff_con)
     t2 = rospy.get_time()
     if wait_time < 0 :
-        rospy.sleep(0.0 + 0.0*math.sin(t2/3.5))#1-(t2-t1))
+        rospy.sleep(0.04 + 0.0*math.sin(t2/3.5))
     else :
         if (t2-t1)<wait_time :
-            rospy.sleep(wait_time-(t2-t1))#1-(t2-t1))
+            rospy.sleep(wait_time-(t2-t1))
 
     t3 = rospy.get_time()
     new_time_est = t3-t1
@@ -552,7 +576,7 @@ def mpcCallback():
     
     # Get updated computation time estimates and variance
     curr_time_est, curr_time_est_var = update_delay_time_estimate(new_time_est)
-    
+    print(curr_time_est, curr_time_est_var)
     # p=[float(x_bot),float(y_bot),float(yaw_car),xs[0],xs[1],xs[2]]
     a=PointStamped()
     a.header.stamp=rospy.Time.now()
@@ -572,7 +596,8 @@ def start():
     global pub5
     global pub6
     global inv_set
-    
+    global pub_obs 
+
     inv_set = get_inv_set(T,0,2,Q_robust,R_robust,N,without_steering=True)
     rospy.init_node('path_tracking', anonymous=True)
     pub1 = rospy.Publisher('cmd_delta', Path, queue_size=1)
@@ -581,10 +606,13 @@ def start():
     pub4 = rospy.Publisher('start_point', PointStamped, queue_size=1)
     pub5 = rospy.Publisher('/reference_trajectory', Path,queue_size=1)
     pub6 = rospy.Publisher('/constraint_line', Path,queue_size=1)
+    pub_obs = rospy.Publisher('/obs_draw', PolygonStamped,queue_size=1)
     rospy.Subscriber("base_pose_ground_truth", Odometry, posCallback,queue_size=1)
     rospy.Subscriber("astroid_path", Path, pathCallback,queue_size=1)
+    
     if scenario != 'static' :
         rospy.Subscriber("/obstacle/base_pose_ground_truth", Odometry, obsPosCallback,queue_size=1)
+        
     rospy.Subscriber("/tf", TFMessage, callback_tf,queue_size=1)
     rospy.spin()
     r=rospy.Rate(1000)
