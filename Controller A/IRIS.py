@@ -40,7 +40,7 @@ def get_region_side(points,x,y) :
         # print(i,"hahahaha")
         if not on_right_of(lines[i],x,y) and on_right_of(lines[j],x,y) :
             return i+4
-    
+
 # Assumptions : Points are in clockwise direction
 def get_safety_line_eqn(points,x,y) :
     reg_i = get_region_side(points,x,y)

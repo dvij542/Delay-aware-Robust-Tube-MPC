@@ -1,42 +1,70 @@
 #!/usr/bin/env python
 '''
-This code implements a low level pre-compensator for following high level command from robust MPC
+This code implements a low level pre-compensator 
+for following high level command from robust MPC
 '''
-import rospy
-import math
-from geometry_msgs.msg import Twist
-from std_msgs.msg import Int16
-from sensor_msgs.msg import Joy
-from nav_msgs.msg import Odometry
-from prius_msgs.msg import Control
-from tf2_msgs.msg import TFMessage
-import numpy as np
-from nav_msgs.msg import Path
-from inv_set_calc import *
-# import matplotlib.pyplot as plt
 
-curr_x = 0
-curr_y = 0
-curr_yaw = 0
-curr_speed = 0
-curr_steering = 0
+# Imports
+if True :
+    import rospy
+    import math
+    from nav_msgs.msg import Odometry
+    from prius_msgs.msg import Control
+    from tf2_msgs.msg import TFMessage
+    import numpy as np
+    from nav_msgs.msg import Path
+    from inv_set_calc import *
+    # import matplotlib.pyplot as plt
 
-path_followed = []
-save_path_after = 5
-buffer_cmd = [None]*8 # Buffer
-has_started = False
-save_at = 0
+# Variables
+if True :
+    Q_robust = np.matrix(np.diag(np.array([1,1,1,1,1])))
+    R_robust = np.matrix(np.diag(np.array([1,1])))
+    N = 8
+    save_path_after = 5
 
-Q_robust = np.matrix(np.diag(np.array([.1,.1,.1,.1,.1])))
-R_robust = np.matrix(np.diag(np.array([1,1])))
-N = 8
+# Global variables for internal communication (Don't change)
+if True :
+    curr_x = 0
+    curr_y = 0
+    curr_yaw = 0
+    curr_speed = 0
+    curr_steering = 0
 
-iter0 = 0
-gt_steering = []
-init_steering_x = 0
-init_steering_y = 0
-init_steering_z = 0
-init_steering_w = 0
+    path_followed = []
+    buffer_cmd = [None]*8 # Buffer
+    has_started = False
+    save_at = 0
+
+
+    iter0 = 0
+    gt_steering = []
+    init_steering_x = 0
+    init_steering_y = 0
+    init_steering_z = 0
+    init_steering_w = 0
+
+def convert_xyzw_to_rpy(x, y, z, w):
+        """
+        Convert a quaternion into euler angles (roll, pitch, yaw)
+        roll is rotation around x in radians (counterclockwise)
+        pitch is rotation around y in radians (counterclockwise)
+        yaw is rotation around z in radians (counterclockwise)
+        """
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll_x = math.atan2(t0, t1)
+     
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        pitch_y = math.asin(t2)
+     
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_z = math.atan2(t3, t4)
+     
+        return roll_x, pitch_y, yaw_z # in radians
 
 # IMPORTANT : Publish to prius vehicle
 def prius_pub():
@@ -74,28 +102,6 @@ def prius_pub():
     
     pub.publish(prius_vel)
     print("Published ", i, prius_vel.throttle, prius_vel.brake, prius_vel.steer, "!!!!!!!!!!!!", rospy.get_time())
-
-def convert_xyzw_to_rpy(x, y, z, w):
-        """
-        Convert a quaternion into euler angles (roll, pitch, yaw)
-        roll is rotation around x in radians (counterclockwise)
-        pitch is rotation around y in radians (counterclockwise)
-        yaw is rotation around z in radians (counterclockwise)
-        """
-        t0 = +2.0 * (w * x + y * z)
-        t1 = +1.0 - 2.0 * (x * x + y * y)
-        roll_x = math.atan2(t0, t1)
-     
-        t2 = +2.0 * (w * y - z * x)
-        t2 = +1.0 if t2 > +1.0 else t2
-        t2 = -1.0 if t2 < -1.0 else t2
-        pitch_y = math.asin(t2)
-     
-        t3 = +2.0 * (w * z + x * y)
-        t4 = +1.0 - 2.0 * (y * y + z * z)
-        yaw_z = math.atan2(t3, t4)
-     
-        return roll_x, pitch_y, yaw_z # in radians
 
 # For getting current steering position
 def callback_tf(data):
@@ -186,6 +192,7 @@ def callback_delta(data):
     else :
         buffer_cmd[:] = data.poses[:]
 
+# Initialization
 def start():
     global pub
     ackermann_cmd_topic = rospy.get_param('~ackermann_cmd_topic', '/prius')

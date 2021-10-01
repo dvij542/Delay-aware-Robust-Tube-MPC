@@ -2,77 +2,80 @@
 
 #!/usr/bin/env python3
 
-from adaptive_kalman_filter import update_delay_time_estimate
-from casadi import *
-from geometry_msgs.msg import Twist
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import PolygonStamped
-from geometry_msgs.msg import Polygon
-from geometry_msgs.msg import Point32
-from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseArray
-from nav_msgs.msg import Path
-from std_msgs.msg import Float64
-from tf2_msgs.msg import TFMessage
-from IRIS import *
-from inv_set_calc import *
-from prius_msgs.msg import Control
-from adaptive_kalman_filter import *
-from geometry_msgs.msg import PointStamped
+'''
+This code implements the high level Delay aware MPC controller 
+for following higher level trajectory from motion planner
+'''
 
-import numpy as np
-import math
-import rospy
-import math
+# Imports
+if True :
+    from adaptive_kalman_filter import update_delay_time_estimate
+    from casadi import *
+    from geometry_msgs.msg import PoseStamped
+    from geometry_msgs.msg import PolygonStamped
+    from geometry_msgs.msg import Point32
+    from nav_msgs.msg import Odometry
+    from nav_msgs.msg import Path
+    from tf2_msgs.msg import TFMessage
+    from IRIS import *
+    from inv_set_calc import *
+    from adaptive_kalman_filter import *
+    from geometry_msgs.msg import PointStamped
 
-################ Parameters ####################
-T = .1     # Time horizon
-N = 8 # number of control intervals
-speed = 5
-save_path_after = 10
-wait_time = -1 # If -1, adaptive kalman filter will be used to predict it
-Td = 0.0 # Actuator processing delay
-gt_steering = 0 # Variable to communicate current value of steering angle
+    import numpy as np
+    import math
+    import rospy
+    import math
 
-has_start=False
-curr_time_est = 0  # Estimated mean value of computation time
-curr_time_est_var = 0 # Estimated variance of computation time
+# Parameters
+if True :
+    T = .1     # Planning time horizon
+    N = 8 # No of control intervals
+    speed = 5 # Target speed of the vehicle
+    save_path_after = 10 # Start saving path after this much time from start (in s)
+    wait_time = -1 # If -1, adaptive kalman filter will be used to predict it
+    extra_time_to_wait = 0.04 # Wait for this additional extra time (in s) after each computation cycle to simulate and verify safety on slow systems
+    Td = 0.0 # Actuator processing delay (in s)
 
-buff_con = [0]*N # buffer sequence of commands
-g_const = 9.8
-mu = 1 # Friction constant (F_{y,max} = mu*mass*g_const)
-scenario = 'static'
+    has_start=False
+    curr_time_est = 0  # Estimated mean value of computation time
+    curr_time_est_var = 0 # Estimated variance of computation time
 
+    g_const = 9.8
+    mu = 1 # Friction constant (F_{y,max} = mu*mass*g_const)
+    scenario = 'static'
 
-time_estimates = []
-planned_paths = []
-time_to_finish = 0
-obstacle_points = np.array([[22,-18],[22,-10],[32,-10],[32,-18]]) # Static obstacle
-inv_set = [] # Invariant set, Z
+    obstacle_points = np.array([[22,-18],[22,-10],[32,-10],[32,-18]]) # Static obstacle
 
-L = 3 # Length of the vehicle in m
-Ka = 4.25 # Pedal constant (F_x = Ka*mass*pedal_value)
-Kf = -0.25 # Friction resistance (F_{friction,x} = Kf*mass)
-vehicle_footprint = [[3,1],[-1,1],[-1,-1],[3,-1]] # Vehicle dimensions in m
+    L = 3 # Length of the vehicle in m
+    Ka = 4.25 # Pedal constant (F_x = Ka*mass*pedal_value)
+    Kf = -0.25 # Friction resistance (F_{friction,x} = Kf*mass)
+    vehicle_footprint = [[3,1],[-1,1],[-1,-1],[3,-1]] # Vehicle dimensions in m
 
-Q_robust = np.matrix(np.diag(np.array([1,1,1,1]))) 
-R_robust = np.matrix(np.diag(np.array([.1,.1])))
+    Q_robust = np.matrix(np.diag(np.array([1,1,1,1]))) 
+    R_robust = np.matrix(np.diag(np.array([.1,.1])))
 
+    ############ Calculated offline from inv_set_calc.py (Last commented part) ###############
+    steering_limits = [0.5511084632063113, 0.5511084632063113, 0.5511084632063113, \
+        0.5185237587941808, 0.5511084632063113, 0.5727896385850489, 0.5896766286658156, \
+        0.6037252485785009, 0.616120511291855, 0.6266117297066048, 0.6266117297066048]
+    acc_limits = [3.7014163903050914, 3.700715491966788, 3.7157664426919617, \
+        3.7346625840889347, 3.751783194067104, 3.7654178037240746, 3.7756355027001733, \
+        3.7829216295990125, 3.7880532616963265, 3.791426044016998, 3.791426044016998]
+    #################### Function of speeds (step size 1 m/s) ################################
 
-############ Calculated offline from inv_set_calc,py (Last commented part) ###############
-steering_limits = [0.5511084632063113, 0.5511084632063113, 0.5511084632063113, \
-    0.5185237587941808, 0.5511084632063113, 0.5727896385850489, 0.5896766286658156, \
-    0.6037252485785009, 0.616120511291855, 0.6266117297066048, 0.6266117297066048]
-acc_limits = [3.7014163903050914, 3.700715491966788, 3.7157664426919617, \
-    3.7346625840889347, 3.751783194067104, 3.7654178037240746, 3.7756355027001733, \
-    3.7829216295990125, 3.7880532616963265, 3.791426044016998, 3.791426044016998]
-#################### Function of speeds (step size 1 m/s) ################################
+    DONT_CONSIDER_COMP_DELAY = False # If True, computation delay compensation will not be considered
+    DONT_CONSIDER_STEERING_DYNAMICS = False # If True, actuator dynamic delay compensation will not be considered
 
-
-DONT_CONSIDER_COMP_DELAY = False # If True, computation delay compensation will not be considered
-DONT_CONSIDER_STEERING_DYNAMICS = False # If True, actuator dynamic delay compensation will not be considered
-
-FIRST_TIME = True
+# Global variables for internal communication (Don't change)
+if True :
+    buff_con = [0]*N # buffer sequence of commands
+    gt_steering = 0 # Variable to communicate current value of steering angle
+    inv_set = [] # Invariant set, Z
+    time_estimates = []
+    planned_paths = []
+    time_to_finish = 0
+    FIRST_TIME = True
 
 # Definitions of optimization objective 
 if True : 
@@ -184,21 +187,156 @@ if True :
     u0=np.random.rand(N,2)
     x0=reshape(u0,2*N,1)
 
-def dist(a, x, y):
-    return (((a.pose.position.x - x)**2) + ((a.pose.position.y - y)**2))**0.5
+# Utility functions
+if True :
+    def dist(a, x, y):
+        return (((a.pose.position.x - x)**2) + ((a.pose.position.y - y)**2))**0.5
 
-def path_length_distance(a,b):
-    return (((a.pose.position.x - b.pose.position.x)**2) + ((a.pose.position.y - b.pose.position.y)**2))**0.5
+    def path_length_distance(a,b):
+        return (((a.pose.position.x - b.pose.position.x)**2) + ((a.pose.position.y - b.pose.position.y)**2))**0.5
 
-def calc_path_length(data):
-    # global path_length
-    path_length = []
-    for i in range(len(data.poses)):
-        if i == 0:
-            path_length.append(0)
-        else:
-            path_length.append(path_length[i-1] + path_length_distance(data.poses[i], data.poses[i-1]))
-    return path_length
+    def calc_path_length(data):
+        # global path_length
+        path_length = []
+        for i in range(len(data.poses)):
+            if i == 0:
+                path_length.append(0)
+            else:
+                path_length.append(path_length[i-1] + path_length_distance(data.poses[i], data.poses[i-1]))
+        return path_length
+
+    def convert_xyzw_to_rpy(x, y, z, w):
+            """
+            Convert a quaternion into euler angles (roll, pitch, yaw)
+            roll is rotation around x in radians (counterclockwise)
+            pitch is rotation around y in radians (counterclockwise)
+            yaw is rotation around z in radians (counterclockwise)
+            """
+            t0 = +2.0 * (w * x + y * z)
+            t1 = +1.0 - 2.0 * (x * x + y * y)
+            roll_x = math.atan2(t0, t1)
+        
+            t2 = +2.0 * (w * y - z * x)
+            t2 = +1.0 if t2 > +1.0 else t2
+            t2 = -1.0 if t2 < -1.0 else t2
+            pitch_y = math.asin(t2)
+        
+            t3 = +2.0 * (w * z + x * y)
+            t4 = +1.0 - 2.0 * (y * y + z * z)
+            yaw_z = math.atan2(t3, t4)
+        
+            return roll_x, pitch_y, yaw_z # in radians
+
+    # Preprocessing to get the trackable path by the vehicle (for MPC) at current speed, for N steps at T step length
+    def get_path(x_bot1, y_bot1, x_p, N,speed,T) :
+        out_path = []
+        path_lengths = calc_path_length(x_p)
+        distances = []    
+        for i in range(len(x_p.poses)):
+            a = x_p.poses[i]
+            distances += [dist(a, x_bot1, y_bot1)]
+        # print(distances)
+        ep = min(distances)
+        cp = distances.index(ep)
+        i = cp
+        
+        # In case of very sparsely present points, divide segments into multiple parts to get closest point
+        new_dists = []
+        if cp > 0 :
+            available_length_l = path_lengths[cp] - path_lengths[cp-1]
+        else :
+            available_length_l = 0
+        
+        if cp < len(path_lengths) - 1 :
+            available_length_r = path_lengths[cp+1] - path_lengths[cp]
+        else :
+            available_length_r = 0
+        
+        no_of_segs_l = 3*int(available_length_l/(speed*T)) 
+        no_of_segs_r = 3*int(available_length_r/(speed*T)) 
+        seg_len_l = available_length_l/max(no_of_segs_l,1)
+        seg_len_r = available_length_r/max(no_of_segs_r,1)
+        for s in range(no_of_segs_l) :
+            x1,y1 = x_p.poses[cp-1].pose.position.x, x_p.poses[cp-1].pose.position.y
+            x2,y2 = x_p.poses[cp].pose.position.x, x_p.poses[cp].pose.position.y
+            xs,ys = x1 + (x2-x1)*(seg_len_l/available_length_l)*(s+1), y1 + (y2-y1)*(seg_len_l/available_length_l)*(s+1)
+            new_dists += [((xs-x_bot1)**2 + (ys-y_bot1)**2)**0.5]
+        new_dists.append(ep)
+        for s in range(no_of_segs_r) :
+            x1,y1 = x_p.poses[cp].pose.position.x, x_p.poses[cp].pose.position.y
+            x2,y2 = x_p.poses[cp+1].pose.position.x, x_p.poses[cp+1].pose.position.y
+            xs,ys = x1 + (x2-x1)*(seg_len_r/available_length_r)*(s+1), y1 + (y2-y1)*(seg_len_r/available_length_r)*(s+1)
+            new_dists += [((xs-x_bot1)**2 + (ys-y_bot1)**2)**0.5]
+        min_ni = new_dists.index(min(new_dists))
+        min_ni += 1
+        if min_ni < no_of_segs_l :
+            s = min_ni
+            x1,y1 = x_p.poses[cp-1].pose.position.x, x_p.poses[cp-1].pose.position.y
+            x2,y2 = x_p.poses[cp].pose.position.x, x_p.poses[cp].pose.position.y
+            xs,ys = x1 + (x2-x1)*(seg_len_l/available_length_l)*(s+1), y1 + (y2-y1)*(seg_len_l/available_length_l)*(s+1)
+            pose_temp=PoseStamped()
+            pose_temp.pose.position.x = xs
+            pose_temp.pose.position.y = ys
+            x_p.poses.insert(cp,pose_temp)
+            path_lengths.insert(cp,path_lengths[cp-1] + seg_len_l*(s+1))
+        if min_ni > no_of_segs_l :
+            s = min_ni - no_of_segs_l - 1
+            x1,y1 = x_p.poses[cp].pose.position.x, x_p.poses[cp].pose.position.y
+            x2,y2 = x_p.poses[cp+1].pose.position.x, x_p.poses[cp+1].pose.position.y
+            xs,ys = x1 + (x2-x1)*(seg_len_r/available_length_r)*(s+1), y1 + (y2-y1)*(seg_len_r/available_length_r)*(s+1)
+            pose_temp=PoseStamped()
+            pose_temp.pose.position.x = xs
+            pose_temp.pose.position.y = ys
+            x_p.poses.insert(cp+1,pose_temp)
+            path_lengths.insert(cp+1,path_lengths[cp] + seg_len_r*(s+1))
+            cp = cp + 1
+        i = cp
+        
+        # Building the path
+        for j in range(N) :
+            req_dist = (j+1)*speed*T
+            k = i
+            while(k<len(path_lengths) and path_lengths[k]-path_lengths[cp]<req_dist ) :
+                k += 1
+            if k>=len(path_lengths) :
+                k = len(path_lengths) - 1
+                out_path.append(np.array([x_p.poses[k].pose.position.x,x_p.poses[k].pose.position.y]))
+                continue
+            a = req_dist + path_lengths[cp] - path_lengths[k-1]
+            b = path_lengths[k] - req_dist - path_lengths[cp]
+            X1 = np.array([x_p.poses[k-1].pose.position.x,x_p.poses[k-1].pose.position.y])
+            X2 = np.array([x_p.poses[k].pose.position.x,x_p.poses[k].pose.position.y])
+            X = X1*b/(a+b) + X2*a/(a+b)
+            out_path.append(X)
+            i = k-1
+        return np.array(out_path)
+
+    # Get shifted initial pose of the ego vehicle
+    def get_future_state_est(current_pose,buff_con,curr_time_est) :
+        # print("Pose before : ", np.array(current_pose))
+        if DONT_CONSIDER_COMP_DELAY :
+            return np.array(current_pose)
+        itr = 0
+        while (curr_time_est > T) :
+            # print("Start ", buff_con)
+            if buff_con[0] !=0 :
+                # print("Was ", buff_con[itr,:])
+                f_value=f(current_pose,buff_con[itr,:])
+            else :
+                f_value=f(current_pose,float(buff_con[itr]))
+            current_pose = list(np.array(current_pose)+np.array(T*f_value)[:,0])
+            itr = itr + 1
+            curr_time_est = curr_time_est - T
+        # print("Was ", buff_con[itr])
+        # print("Used ", float(buff_con[itr]))
+        if buff_con[0] !=0 :
+            # print("Was ", buff_con[itr,:])
+            f_value=f(current_pose,buff_con[itr,:])
+        else :
+            f_value=f(current_pose,float(buff_con[itr]))# print("f_value :", f_value)
+        # print(curr_time_est, rospy.get_time())
+        # print(np.array(curr_time_est*f_value)[:,0])
+        return np.array(current_pose)+np.array(curr_time_est*f_value)[:,0]
 
 # Called when position is updated
 def posCallback(posedata):
@@ -229,28 +367,6 @@ def obsPosCallback(posedata) :
             obs_draw.polygon.points.append(temp_point)
         pub_obs.publish(obs_draw)
             
-def convert_xyzw_to_rpy(x, y, z, w):
-        """
-        Convert a quaternion into euler angles (roll, pitch, yaw)
-        roll is rotation around x in radians (counterclockwise)
-        pitch is rotation around y in radians (counterclockwise)
-        yaw is rotation around z in radians (counterclockwise)
-        """
-        t0 = +2.0 * (w * x + y * z)
-        t1 = +1.0 - 2.0 * (x * x + y * y)
-        roll_x = math.atan2(t0, t1)
-     
-        t2 = +2.0 * (w * y - z * x)
-        t2 = +1.0 if t2 > +1.0 else t2
-        t2 = -1.0 if t2 < -1.0 else t2
-        pitch_y = math.asin(t2)
-     
-        t3 = +2.0 * (w * z + x * y)
-        t4 = +1.0 - 2.0 * (y * y + z * z)
-        yaw_z = math.atan2(t3, t4)
-     
-        return roll_x, pitch_y, yaw_z # in radians
-
 # Called whe transforms are updated, gets the updated value of actual steering
 def callback_tf(data):
     global gt_steering
@@ -301,119 +417,6 @@ def pathCallback(pathdata):
     has_start=True
     x_p = pathdata
     # mpcCallback()
-
-# Preprocessing to get the trackable path by the vehicle (for MPC) at current speed, for N steps at T step length
-def get_path(x_bot1, y_bot1, x_p, N,speed,T) :
-    out_path = []
-    path_lengths = calc_path_length(x_p)
-    distances = []    
-    for i in range(len(x_p.poses)):
-        a = x_p.poses[i]
-        distances += [dist(a, x_bot1, y_bot1)]
-    # print(distances)
-    ep = min(distances)
-    total_index=len(x_p.poses)
-    cp = distances.index(ep)
-    curr_dist = path_lengths[cp]
-    i = cp
-    
-    # In case of very sparsely present points, divide segments into multiple parts to get closest point
-    new_dists = []
-    if cp > 0 :
-        available_length_l = path_lengths[cp] - path_lengths[cp-1]
-    else :
-        available_length_l = 0
-    
-    if cp < len(path_lengths) - 1 :
-        available_length_r = path_lengths[cp+1] - path_lengths[cp]
-    else :
-        available_length_r = 0
-    
-    no_of_segs_l = 3*int(available_length_l/(speed*T)) 
-    no_of_segs_r = 3*int(available_length_r/(speed*T)) 
-    seg_len_l = available_length_l/max(no_of_segs_l,1)
-    seg_len_r = available_length_r/max(no_of_segs_r,1)
-    for s in range(no_of_segs_l) :
-        x1,y1 = x_p.poses[cp-1].pose.position.x, x_p.poses[cp-1].pose.position.y
-        x2,y2 = x_p.poses[cp].pose.position.x, x_p.poses[cp].pose.position.y
-        xs,ys = x1 + (x2-x1)*(seg_len_l/available_length_l)*(s+1), y1 + (y2-y1)*(seg_len_l/available_length_l)*(s+1)
-        new_dists += [((xs-x_bot1)**2 + (ys-y_bot1)**2)**0.5]
-    new_dists.append(ep)
-    for s in range(no_of_segs_r) :
-        x1,y1 = x_p.poses[cp].pose.position.x, x_p.poses[cp].pose.position.y
-        x2,y2 = x_p.poses[cp+1].pose.position.x, x_p.poses[cp+1].pose.position.y
-        xs,ys = x1 + (x2-x1)*(seg_len_r/available_length_r)*(s+1), y1 + (y2-y1)*(seg_len_r/available_length_r)*(s+1)
-        new_dists += [((xs-x_bot1)**2 + (ys-y_bot1)**2)**0.5]
-    min_ni = new_dists.index(min(new_dists))
-    min_ni += 1
-    if min_ni < no_of_segs_l :
-        s = min_ni
-        x1,y1 = x_p.poses[cp-1].pose.position.x, x_p.poses[cp-1].pose.position.y
-        x2,y2 = x_p.poses[cp].pose.position.x, x_p.poses[cp].pose.position.y
-        xs,ys = x1 + (x2-x1)*(seg_len_l/available_length_l)*(s+1), y1 + (y2-y1)*(seg_len_l/available_length_l)*(s+1)
-        pose_temp=PoseStamped()
-        pose_temp.pose.position.x = xs
-        pose_temp.pose.position.y = ys
-        x_p.poses.insert(cp,pose_temp)
-        path_lengths.insert(cp,path_lengths[cp-1] + seg_len_l*(s+1))
-    if min_ni > no_of_segs_l :
-        s = min_ni - no_of_segs_l - 1
-        x1,y1 = x_p.poses[cp].pose.position.x, x_p.poses[cp].pose.position.y
-        x2,y2 = x_p.poses[cp+1].pose.position.x, x_p.poses[cp+1].pose.position.y
-        xs,ys = x1 + (x2-x1)*(seg_len_r/available_length_r)*(s+1), y1 + (y2-y1)*(seg_len_r/available_length_r)*(s+1)
-        pose_temp=PoseStamped()
-        pose_temp.pose.position.x = xs
-        pose_temp.pose.position.y = ys
-        x_p.poses.insert(cp+1,pose_temp)
-        path_lengths.insert(cp+1,path_lengths[cp] + seg_len_r*(s+1))
-        cp = cp + 1
-    i = cp
-    
-    # Building the path
-    for j in range(N) :
-        req_dist = (j+1)*speed*T
-        k = i
-        while(k<len(path_lengths) and path_lengths[k]-path_lengths[cp]<req_dist ) :
-            k += 1
-        if k>=len(path_lengths) :
-            k = len(path_lengths) - 1
-            out_path.append(np.array([x_p.poses[k].pose.position.x,x_p.poses[k].pose.position.y]))
-            continue
-        a = req_dist + path_lengths[cp] - path_lengths[k-1]
-        b = path_lengths[k] - req_dist - path_lengths[cp]
-        X1 = np.array([x_p.poses[k-1].pose.position.x,x_p.poses[k-1].pose.position.y])
-        X2 = np.array([x_p.poses[k].pose.position.x,x_p.poses[k].pose.position.y])
-        X = X1*b/(a+b) + X2*a/(a+b)
-        out_path.append(X)
-        i = k-1
-    return np.array(out_path)
-
-# Get shifted initial pose of the ego vehicle
-def get_future_state_est(current_pose,buff_con,curr_time_est) :
-    # print("Pose before : ", np.array(current_pose))
-    if DONT_CONSIDER_COMP_DELAY :
-        return np.array(current_pose)
-    itr = 0
-    while (curr_time_est > T) :
-        # print("Start ", buff_con)
-        if buff_con[0] !=0 :
-            # print("Was ", buff_con[itr,:])
-            f_value=f(current_pose,buff_con[itr,:])
-        else :
-            f_value=f(current_pose,float(buff_con[itr]))
-        current_pose = list(np.array(current_pose)+np.array(T*f_value)[:,0])
-        itr = itr + 1
-        curr_time_est = curr_time_est - T
-    # print("Was ", buff_con[itr])
-    # print("Used ", float(buff_con[itr]))
-    if buff_con[0] !=0 :
-        # print("Was ", buff_con[itr,:])
-        f_value=f(current_pose,buff_con[itr,:])
-    else :
-        f_value=f(current_pose,float(buff_con[itr]))# print("f_value :", f_value)
-    # print(curr_time_est, rospy.get_time())
-    # print(np.array(curr_time_est*f_value)[:,0])
-    return np.array(current_pose)+np.array(curr_time_est*f_value)[:,0]
 
 # IMPORTANT : MPC for optimization
 def mpcCallback():
@@ -556,7 +559,7 @@ def mpcCallback():
     print("Published ", buff_con)
     t2 = rospy.get_time()
     if wait_time < 0 :
-        rospy.sleep(0.04 + 0.0*math.sin(t2/3.5))
+        rospy.sleep(extra_time_to_wait + 0.0*math.sin(t2/3.5))
     else :
         if (t2-t1)<wait_time :
             rospy.sleep(wait_time-(t2-t1))
