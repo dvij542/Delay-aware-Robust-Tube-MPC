@@ -1,0 +1,445 @@
+<?xml version="1.0"?>
+<!--
+(c) 2005-2015 Copyright, Real-Time Innovations.  All rights reserved.
+No duplications, whole or partial, manual or electronic, may be made
+without express written permission.  Any such copies, or revisions thereof,
+must display this notice unaltered.
+This code contains trade secrets of Real-Time Innovations, Inc.
+ -->
+
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:noNamespaceSchemaLocation="http://community.rti.com/schema/6.0.0/rti_dds_profiles.xsd" 
+     version="6.0.0">
+
+    <!-- Qos Library -->
+    <qos_library name="QosLibrary">
+        <qos_profile name="DefaultProfile"
+                     base_name="BuiltinQosLib::Generic.StrictReliable"
+                     is_default_qos="true">
+            <participant_qos>
+                <participant_name>
+                    <name>Connector Shape Example</name>
+                </participant_name>
+            </participant_qos>
+        </qos_profile>
+    </qos_library>
+
+    <!-- types -->
+    <types xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:///C:/Program Files/rti_connext_dds-6.0.1/bin/../resource/app/app_support/rtiddsgen/schema/rti_dds_topic_types.xsd">
+        <struct name="ShapeType" extensibility="extensible">
+            <member name="color" stringMaxLength="128" type="string" key="true"/>
+            <member name="x" type="long"/>
+            <member name="y" type="long"/>
+            <member name="shapesize" type="long"/>
+        </struct>
+        <enum name="ShapeFillKind" extensibility="extensible">
+            <enumerator name="SOLID_FILL" value="0"/>
+            <enumerator name="TRANSPARENT_FILL" value="1"/>
+            <enumerator name="HORIZONTAL_HATCH_FILL" value="2"/>
+            <enumerator name="VERTICAL_HATCH_FILL" value="3"/>
+        </enum>
+        <struct name="ShapeTypeExtended" baseType="ShapeType" extensibility="extensible">
+            <member name="fillKind" type="nonBasic" nonBasicTypeName="ShapeFillKind"/>
+            <member name="angle" type="float"/>
+        </struct>
+        <struct name="controlsArray" extensibility="extensible">
+          <member name="steeringArray" id = "0"  arrayDimensions="20" type="float64"/>
+          <member name="speedsArray" id = "1"  arrayDimensions="20" type="float64"/>
+        </struct>
+
+        <struct name="pathTuple" extensibility="extensible">
+          <member name="param" id = "0" arrayDimensions="805" type="float64"/>
+        </struct>
+      
+        <module name="IndyDS">
+            <struct name= "VehicleOutput">
+                <member name="CustomOutput" id="0" type="float64" arrayDimensions="512"/>
+                <member name="EngineSpeed" id="1" type="float64" />
+                <member name="EngineState" id="2" type="byte"/>
+                <member name="GearBoxMode" id="3" type="int32"/>
+                <member name="GearEngaged" id="4" type="int32"/>
+                <member name="GroundIndex" id="5" type="int32" arrayDimensions="4"/>
+                <member name="LSR" id="6" type="float64" arrayDimensions="4"/>
+                <member name="SteeringWheelAccel" id="7" type="float64"  />
+                <member name="SteeringWheelAngle" id="8" type="float64"  />
+                <member name="SteeringWheelSpeed" id="9" type="float64"  />
+                <member name="SteeringWheelTorque" id="10" type="float64"  />
+                <member name="TimeOfUpdate" id="11" type="float64"  />
+                <member name="TraveledDistance" id="12" type="float64"  />
+                <member name="absIsActive" id="13" type="byte" arrayDimensions="4"/>
+                <member name="auxiliaryLights" id="14" type="int32"/>
+                <member name="brakePedal" id="15" type="float64"  />
+                <member name="brakeRetarderNotch" id="16" type="float64"  />
+                <member name="brakeTemperature" id="17" type="float64" arrayDimensions="4"/>
+                <member name="cdgAccel_heading" id="18" type="float64"  />
+                <member name="cdgAccel_pitch" id="19" type="float64"  />
+                <member name="cdgAccel_roll" id="20" type="float64"  />
+                <member name="cdgAccel_x" id="21" type="float64"  />
+                <member name="cdgAccel_y" id="22" type="float64"  />
+                <member name="cdgAccel_z" id="23" type="float64"  />
+                <member name="cdgPos_heading" id="24" type="float64"  />
+                <member name="cdgPos_pitch" id="25" type="float64"  />
+                <member name="cdgPos_roll" id="26" type="float64"  />
+                <member name="cdgPos_x" id="27" type="float64"  />
+                <member name="cdgPos_y" id="28" type="float64"  />
+                <member name="cdgPos_z" id="29" type="float64"  />
+                <member name="cdgSpeed_heading" id="30" type="float64"  />
+                <member name="cdgSpeed_pitch" id="31" type="float64"  />
+                <member name="cdgSpeed_roll" id="32" type="float64"  />
+                <member name="cdgSpeed_x" id="33" type="float64"  />
+                <member name="cdgSpeed_y" id="34" type="float64"  />
+                <member name="cdgSpeed_z" id="35" type="float64"  />
+                <member name="clutchPedal" id="36" type="float64"  />
+                <member name="consumption" id="37" type="float64"  />
+                <member name="contactPoint_x" id="38" type="float64" arrayDimensions="4"/>
+                <member name="contactPoint_y" id="39" type="float64" arrayDimensions="4"/>
+                <member name="contactPoint_z" id="40" type="float64" arrayDimensions="4"/>
+                <member name="effectiveIgnitionKeyPosition" id="41" type="int32"/>
+                <member name="forceLockup" id="42" type="byte"/>
+                <member name="gasPedal" id="43" type="float64"  />
+                <member name="grip" id="44" type="float64" arrayDimensions="4"/>
+                <member name="groundNormal_x" id="45" type="float64" arrayDimensions="4"/>
+                <member name="groundNormal_y" id="46" type="float64" arrayDimensions="4"/>
+                <member name="groundNormal_z" id="47" type="float64" arrayDimensions="4"/>
+                <member name="groundType" id="48" type="int32" arrayDimensions="4"/>
+                <member name="handBrake" id="49" type="float64"  />
+                <member name="hubPosition_heading" id="50" type="float64" arrayDimensions="4"/>
+                <member name="hubPosition_pitch" id="51" type="float64" arrayDimensions="4"/>
+                <member name="hubPosition_roll" id="52" type="float64" arrayDimensions="4"/>
+                <member name="hubPosition_x" id="53" type="float64" arrayDimensions="4"/>
+                <member name="hubPosition_y" id="54" type="float64" arrayDimensions="4"/>
+                <member name="hubPosition_z" id="55" type="float64" arrayDimensions="4"/>
+                <member name="isEngineRetarder" id="56" type="byte"/>
+                <member name="isInContact" id="57" type="byte" arrayDimensions="4"/>
+                <member name="laneType" id="58" type="int32" arrayDimensions="4"/>
+                <member name="lights" id="59" type="int32"/>
+                <member name="lockDiffMode" id="60" type="int32"/>
+                <member name="plowMode" id="61" type="int32"/>
+                <member name="pollution" id="62" type="float64"  />
+                <member name="roughnessHeight" id="63" type="float64" arrayDimensions="4"/>
+                <member name="roughnessHeightStdDeviation" id="64" type="float64" arrayDimensions="4"/>
+                <member name="roughnessLength" id="65" type="float64" arrayDimensions="4"/>
+                <member name="roughnessLengthStdDeviation" id="66" type="float64" arrayDimensions="4"/>
+                <member name="sirens" id="67" type="int32"/>
+                <member name="slipAngle" id="68" type="float64" arrayDimensions="4"/>
+                <member name="tireForce_x" id="69" type="float64" arrayDimensions="4"/>
+                <member name="tireForce_y" id="70" type="float64" arrayDimensions="4"/>
+                <member name="tireForce_z" id="71" type="float64" arrayDimensions="4"/>
+                <member name="trailerBrake" id="72" type="float64"  />
+                <member name="transferChoice" id="73" type="int32"/>
+                <member name="waterHeight" id="74" type="float64" arrayDimensions="4"/>
+                <member name="wheelRotation" id="75" type="float64" arrayDimensions="4"/>
+                <member name="wheelRotationSpeed" id="76" type="float64" arrayDimensions="4"/>
+              </struct>
+
+            <struct name= "RoadLinePolynom">
+                <member name="lineId" type="int16"/>
+                <member name="c0" type="float64"/>
+                <member name="c1" type="float64"/>
+                <member name="c2" type="float64"/>
+                <member name="c3" type="float64"/>
+                <member name="curvatureRadius" type="float64"/>
+                <member name="estimatedCurvatureRadius" type="float64"/>
+            </struct>
+            <struct name= "RoadLinesPolynoms">
+                <member name="egoVhlId" id="0" type="int16"/>
+                <member name="globalId" id="1" type="int32"/>
+                <member name="isNoisy" id="2" type="byte"/>
+                <member name="referenceFrame" id="3" type="int16"/>
+                <member name="roadLinesPolynomsArray" sequenceMaxLength="3" id="4" type="nonBasic"  nonBasicTypeName= "IndyDS::RoadLinePolynom"/>
+                <member name="timeOfUpdate" id="5" type="float64"/>
+            </struct>
+            <struct name= "CabToSteeringCorrective">
+                <member name="AdditiveSteeringWheelAccel" id="0" type="float64"/>
+                <member name="AdditiveSteeringWheelAngle" id="1" type="float64"/>
+                <member name="AdditiveSteeringWheelSpeed" id="2" type="float64"/>
+                <member name="AdditiveSteeringWheelTorque" id="3" type="float64"/>
+                <member name="MultiplicativeSteeringWheelAccel" id="4" type="float64"/>
+                <member name="MultiplicativeSteeringWheelAngle" id="5" type="float64"/>
+                <member name="MultiplicativeSteeringWheelSpeed" id="6" type="float64"/>
+                <member name="MultiplicativeSteeringWheelTorque" id="7" type="float64"/>
+                <member name="TimeOfUpdate" id="8" type="float64"/>
+            </struct>
+            <struct name= "CabToModelCorrective">
+                <member name="AcceleratorAdditive" id="0" type="float64"  />
+                <member name="AcceleratorMultiplicative" id="1" type="float64"  />
+                <member name="BrakeAdditive" id="2" type="float64"  />
+                <member name="BrakeMultiplicative" id="3" type="float64"  />
+                <member name="ClutchAdditive" id="4" type="float64"  />
+                <member name="ClutchMultiplicative" id="5" type="float64"  />
+                <member name="GearboxAutoMode" id="6" type="int16"/>
+                <member name="GearboxTakeOver" id="7" type="byte"/>
+                <member name="IsRatioLimit" id="8" type="byte"/>
+                <member name="MaxRatio" id="9" type="int16"/>
+                <member name="MinRatio" id="10" type="int16"/>
+                <member name="ParkingBrakeAdditive" id="11" type="float64"  />
+                <member name="ParkingBrakeMultiplicative" id="12" type="float64"  />
+                <member name="ShiftDown" id="13" type="byte"/>
+                <member name="ShiftUp" id="14" type="byte"/>
+                <member name="TimeOfUpdate" id="15" type="float64"  />
+                <member name="WantedGear" id="16" type="int16"/>
+            </struct>
+      <struct name= "SensorMovableTarget">
+        <member name="id" id="0" type="int16"/>
+        <member name="scanerId" id="1" type="int16"/>
+        <member name="detectionStatus" id="2" type="int16"/>
+        <member name="type_" id="3" type="int16"/>
+        <member name="beamIndex" id="4" type="int16"/>
+        <member name="existenceTime" id="5" type="float64"/>
+        <member name="anchorPoint" id="6" type="int16"/>
+        <member name="referenceFrame" id="7" type="int16"/>
+        <member name="posXInChosenRef" id="8" type="float64"/>
+        <member name="posYInChosenRef" id="9" type="float64"/>
+        <member name="posZInChosenRef" id="10" type="float64"/>
+        <member name="posHeadingInChosenRef" id="11" type="float32"/>
+        <member name="posPitchInChosenRef" id="12" type="float32"/>
+        <member name="posRollInChosenRef" id="13" type="float32"/>
+        <member name="distanceToCollision" id="14" type="float32"/>
+        <member name="azimuthInSensor" id="15" type="float32"/>
+        <member name="elevationInSensor" id="16" type="float32"/>
+        <member name="azimuthInVehicle" id="17" type="float32"/>
+        <member name="elevationInVehicle" id="18" type="float32"/>
+        <member name="absoluteSpeedX" id="19" type="float32"/>
+        <member name="absoluteSpeedY" id="20" type="float32"/>
+        <member name="absoluteSpeedZ" id="21" type="float32"/>
+        <member name="absoluteAngularSpeedH" id="22" type="float32"/>
+        <member name="absoluteAngularSpeedP" id="23" type="float32"/>
+        <member name="absoluteAngularSpeedR" id="24" type="float32"/>
+        <member name="relativeSpeedX" id="25" type="float32"/>
+        <member name="relativeSpeedY" id="26" type="float32"/>
+        <member name="relativeSpeedZ" id="27" type="float32"/>
+        <member name="relativeAngularSpeedH" id="28" type="float32"/>
+        <member name="relativeAngularSpeedP" id="29" type="float32"/>
+        <member name="relativeAngularSpeedR" id="30" type="float32"/>
+        <member name="absoluteAccelX" id="31" type="float32"/>
+        <member name="absoluteAccelY" id="32" type="float32"/>
+        <member name="absoluteAccelZ" id="33" type="float32"/>
+        <member name="relativeAccelX" id="34" type="float32"/>
+        <member name="relativeAccelY" id="35" type="float32"/>
+        <member name="relativeAccelZ" id="36" type="float32"/>
+        <member name="length" id="37" type="float32"/>
+        <member name="width" id="38" type="float32"/>
+        <member name="height" id="39" type="float32"/>
+        <member name="visibility" id="40" type="float32"/>
+      </struct>
+      <struct name= "SensorMovableTargets">
+        <member name="egoVhlId" id="0" type="int16"/>
+        <member name="globalId" id="1" type="int32"/>
+        <member name="nearestTarget" id="2" type="int16"/>
+        <member name="targetsArray" sequenceMaxLength="30" id="3" type="nonBasic"  nonBasicTypeName= "IndyDS::SensorMovableTarget"/>
+        <member name="timeOfUpdate" id="4" type="float64" />
+      </struct>
+        </module>
+    <module name="DDS">
+      <struct name= "Octets_">
+        <member name="value" sequenceMaxLength="2048" type="byte"/>
+      </struct>
+    </module>
+    </types>
+        
+    <!-- Domain Library -->
+    <!-- <domain_library name="MyDomainLibrary">
+        <domain name="MyDomain" domain_id="31">
+          <register_type name="ShapeType" type_ref="ShapeType" />
+          <register_type name="IndyDS::RoadLinesPolynoms" type_ref="IndyDS::RoadLinesPolynoms" />
+          <register_type name="IndyDS::SensorMovableTargets" type_ref="IndyDS::SensorMovableTargets" />
+          <register_type name="IndyDS::VehicleOutput" type_ref="IndyDS::VehicleOutput" />
+          <register_type name="IndyDS::CabToModelCorrective" type_ref="IndyDS::CabToModelCorrective" />
+          <register_type name="IndyDS::CabToSteeringCorrective" type_ref="IndyDS::CabToSteeringCorrective" />
+          <register_type name="controlsArray" type_ref="controlsArray" />
+          <register_type name="DDS::Octets_" type_ref="DDS::Octets_" />
+            
+          <topic name="Square" register_type_ref="ShapeType"/>
+          <topic name="Circle" register_type_ref="ShapeType"/>
+          <topic name="cameraRoadLinesPolynoms_F1_ego1" register_type_ref="IndyDS::RoadLinesPolynoms"/>
+          <topic name="cameraRoadLinesPolynoms_F2_ego1" register_type_ref="IndyDS::RoadLinesPolynoms"/>
+          <topic name="vehicleStateVehicleOutput_ego1" register_type_ref="IndyDS::VehicleOutput"/>
+          <topic name="toVehicleCabToModelCorrective_ego1" register_type_ref="IndyDS::CabToModelCorrective"/>
+          <topic name="toVehicleSteeringCorrective_ego1" register_type_ref="IndyDS::CabToSteeringCorrective"/>
+          <topic name="radarSensorMovableTargets_F_ego1" register_type_ref="IndyDS::SensorMovableTargets"/>
+          <topic name="radarSensorMovableTargets_Port_ego1" register_type_ref="IndyDS::SensorMovableTargets"/>
+          <topic name="radarSensorMovableTargets_Stbd_ego1" register_type_ref="IndyDS::SensorMovableTargets"/>
+          <topic name="controls_ego1" register_type_ref="controlsArray"/>
+          <topic name="dds_done_reply1" register_type_ref="DDS::Octets_"/>
+          <topic name="dds_done1" register_type_ref="DDS::Octets_"/>
+    
+        </domain>
+    </domain_library> -->
+
+  <!-- Domain Library -->
+  <domain_library name="MyDomainLibrary">
+    <domain name="MyDomain" domain_id="31">
+      <register_type name="ShapeType" type_ref="ShapeType" />
+      <register_type name="IndyDS::RoadLinesPolynoms" type_ref="IndyDS::RoadLinesPolynoms" />
+      <register_type name="IndyDS::SensorMovableTargets" type_ref="IndyDS::SensorMovableTargets" />
+      <register_type name="IndyDS::VehicleOutput" type_ref="IndyDS::VehicleOutput" />
+      <register_type name="IndyDS::CabToModelCorrective" type_ref="IndyDS::CabToModelCorrective" />
+      <register_type name="IndyDS::CabToSteeringCorrective" type_ref="IndyDS::CabToSteeringCorrective" />
+      <register_type name="controlsArray" type_ref="controlsArray" />
+      <register_type name="DDS::Octets_" type_ref="DDS::Octets_" />
+      <register_type name="pathTuple" type_ref="pathTuple" />
+
+      <topic name="Square" register_type_ref="ShapeType"/>
+      <topic name="Circle" register_type_ref="ShapeType"/>
+      <topic name="cameraRoadLinesPolynoms_F1_ego1" register_type_ref="IndyDS::RoadLinesPolynoms"/>
+      <topic name="cameraRoadLinesPolynoms_F2_ego1" register_type_ref="IndyDS::RoadLinesPolynoms"/>
+      <topic name="vehicleStateVehicleOutput_ego1" register_type_ref="IndyDS::VehicleOutput"/>
+      <topic name="toVehicleCabToModelCorrective_ego1" register_type_ref="IndyDS::CabToModelCorrective"/>
+      <topic name="toVehicleSteeringCorrective_ego1" register_type_ref="IndyDS::CabToSteeringCorrective"/>
+      <topic name="radarSensorMovableTargets_F_ego1" register_type_ref="IndyDS::SensorMovableTargets"/>
+      <topic name="radarSensorMovableTargets_Port_ego1" register_type_ref="IndyDS::SensorMovableTargets"/>
+      <topic name="radarSensorMovableTargets_Stbd_ego1" register_type_ref="IndyDS::SensorMovableTargets"/>
+      <topic name="controls_ego1" register_type_ref="controlsArray"/>
+      <topic name="dds_done_reply1" register_type_ref="DDS::Octets_"/>
+      <topic name="dds_done1" register_type_ref="DDS::Octets_"/>
+      <topic name="graphpath" register_type_ref="pathTuple"/>
+
+    </domain>
+  </domain_library>
+
+  <domain_participant_library name="MyParticipantLibrary">
+        <!-- We use separate participants because we run the writer and the reader
+            on different applications, and wouldn't want to create the reader
+            in writer.py, or the writer in reader.py -->
+
+        <domain_participant name="MyPubParticipant" domain_ref="MyDomainLibrary::MyDomain">
+            <publisher name="MyPublisher">
+                <data_writer name="MySquareWriter" topic_ref="Square" />
+            </publisher>
+        </domain_participant>
+
+        <domain_participant name="MySubParticipant" domain_ref="MyDomainLibrary::MyDomain">
+            <subscriber name="MySubscriber">
+                <data_reader name="MySquareReader" topic_ref="Square" />
+            </subscriber>
+        </domain_participant>
+        
+        <domain_participant name="roadSubParticipant" domain_ref="MyDomainLibrary::MyDomain">
+            <subscriber name="roadSubscriber">
+                <data_reader name="roadReader" topic_ref="cameraRoadLinesPolynoms_F1_ego1" />
+            </subscriber>
+        </domain_participant>
+
+        <!-- You can also define the reader and writer inside the same
+            connector instance if you plan to use both in the same application.
+        -->
+    <domain_participant name="MyParticipant" domain_ref="MyDomainLibrary::MyDomain">
+      <subscriber name="roadSubscriber">
+        <data_reader name="roadReader" topic_ref="cameraRoadLinesPolynoms_F1_ego1" />
+      </subscriber>
+      <publisher name="steeringPublisher">
+        <data_writer name="steeringPub" topic_ref="toVehicleSteeringCorrective_ego1" />
+      </publisher>
+      <subscriber name="StateSubscriber">
+        <data_reader name="stateReader" topic_ref="vehicleStateVehicleOutput_ego1" />
+      </subscriber>
+      <publisher name="SpeedPublisher">
+        <data_writer name="speedPub" topic_ref="toVehicleCabToModelCorrective_ego1" />
+      </publisher>
+    </domain_participant>
+    <domain_participant name="ObstacleParticipant" domain_ref="MyDomainLibrary::MyDomain">
+        <publisher name="simDonePub">
+            <data_writer name="simDoneWriter" topic_ref="dds_done_reply1" />
+        </publisher>
+        <subscriber name="simWaitSub">
+            <data_reader name="simWaitReader" topic_ref="dds_done1" />
+        </subscriber>
+        <subscriber name="roadSubscriber">
+          <data_reader name="roadReader1" topic_ref="cameraRoadLinesPolynoms_F1_ego1" />
+          <data_reader name="roadReader2" topic_ref="cameraRoadLinesPolynoms_F2_ego1" />
+        </subscriber>
+        <publisher name="steeringPublisher">
+          <data_writer name="steeringPub" topic_ref="toVehicleSteeringCorrective_ego1" />
+        </publisher>
+        <publisher name="controlPublisher">
+          <data_writer name="controlPub" topic_ref="controls_ego1" />
+        </publisher>
+        <subscriber name="StateSubscriber">
+          <data_reader name="stateReader" topic_ref="vehicleStateVehicleOutput_ego1" />
+        </subscriber>
+        <publisher name="SpeedPublisher">
+          <data_writer name="speedPub" topic_ref="toVehicleCabToModelCorrective_ego1" />
+        </publisher>
+        <subscriber name="radarSubscriber_F">
+          <data_reader name="radarReader_F" topic_ref="radarSensorMovableTargets_F_ego1" />
+        </subscriber>
+        <subscriber name="radarSubscriber_left">
+          <data_reader name="radarReader_left" topic_ref="radarSensorMovableTargets_Port_ego1" />
+        </subscriber>
+        <subscriber name="radarSubscriber_right">
+          <data_reader name="radarReader_right" topic_ref="radarSensorMovableTargets_Stbd_ego1" />
+        </subscriber>
+      </domain_participant>
+
+      <!-- The transform.py script reads Squares and writes Circles -->
+        <domain_participant name="SpeedParticipant" domain_ref="MyDomainLibrary::MyDomain">
+            <subscriber name="controlSubscriber">
+                <data_reader name="controlSub" topic_ref="controls_ego1" />
+            </subscriber>
+            <subscriber name="StateSubscriber">
+                <data_reader name="stateReader" topic_ref="vehicleStateVehicleOutput_ego1" />
+            </subscriber>
+            <publisher name="SpeedPublisher">
+                <data_writer name="speedPub" topic_ref="toVehicleCabToModelCorrective_ego1" />
+            </publisher>
+            <publisher name="steeringPublisher">
+                <data_writer name="steeringPub" topic_ref="toVehicleSteeringCorrective_ego1" />
+            </publisher>
+        </domain_participant>
+
+    <domain_participant name="CircleSubParticipant" domain_ref="MyDomainLibrary::MyDomain">
+      <subscriber name="MySubscriber">
+        <data_reader name="MyCircleReader" topic_ref="Circle" />
+      </subscriber>
+    </domain_participant>
+
+    <domain_participant name="GraphParticipant" domain_ref="MyDomainLibrary::MyDomain">
+      <subscriber name="StateSubscriber">
+        <data_reader name="stateReader" topic_ref="vehicleStateVehicleOutput_ego1" />
+      </subscriber>
+      <publisher name="pathPublisher">
+        <data_writer name="pathPub" topic_ref="graphpath" />
+      </publisher>
+      <publisher name="simDonePub">
+        <data_writer name="simDoneWriter" topic_ref="dds_done_reply1" />
+      </publisher>
+      <subscriber name="simWaitSub">
+        <data_reader name="simWaitReader" topic_ref="dds_done1" />
+      </subscriber>
+      <subscriber name="radarSubscriber_F">
+        <data_reader name="radarReader_F" topic_ref="radarSensorMovableTargets_F_ego1" />
+      </subscriber>
+      <subscriber name="radarSubscriber_left">
+        <data_reader name="radarReader_left" topic_ref="radarSensorMovableTargets_Port_ego1" />
+      </subscriber>
+      <subscriber name="radarSubscriber_right">
+        <data_reader name="radarReader_right" topic_ref="radarSensorMovableTargets_Stbd_ego1" />
+      </subscriber>
+    </domain_participant>
+  
+    <domain_participant name="MyPurePursuitParticipant" domain_ref="MyDomainLibrary::MyDomain">
+      <subscriber name="pathSubscriber">
+          <data_reader name="pathSub" topic_ref="graphpath" />
+      </subscriber>
+      <publisher name="steeringPublisher">
+          <data_writer name="steeringPub" topic_ref="toVehicleSteeringCorrective_ego1" />
+      </publisher>
+      <publisher name="SpeedPublisher">
+          <data_writer name="speedPub" topic_ref="toVehicleCabToModelCorrective_ego1" />
+      </publisher>
+      <subscriber name="StateSubscriber">
+          <data_reader name="stateReader" topic_ref="vehicleStateVehicleOutput_ego1" />
+      </subscriber>
+      <publisher name="controlPublisher">
+          <data_writer name="controlPub" topic_ref="controls_ego1" />
+      </publisher>
+      <publisher name="simDonePub">
+        <data_writer name="simDoneWriter" topic_ref="dds_done_reply1" />
+      </publisher>
+      <subscriber name="simWaitSub">
+        <data_reader name="simWaitReader" topic_ref="dds_done1" />
+      </subscriber>
+    </domain_participant>
+ 
+  </domain_participant_library>
+</dds>
