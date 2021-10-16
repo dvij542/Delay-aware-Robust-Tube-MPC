@@ -38,7 +38,8 @@ air_resistance_const = 0.43
 mass = 720 # in Kg
 tolerance = 2
 save_path_after = -1
-file_path_follow = "./lap1.csv"  # File to read the global reference line, if None then centre line will be taken
+file_centre_line = "./lap1.csv"  # File to read the global reference line, if None then centre line will be taken
+file_path_follow = "./lap8.csv"  # File to read the global reference line, if None then centre line will be taken
 file_new_path = "./coordinates_nc2.txt" # File in which the new coordinates will be saved
 Q_along=2  # Weight for progress along the road
 Q_dist=0  # Weight for distance for the center of the road
@@ -247,6 +248,10 @@ with rti.open_connector(
         trajectory_to_follow = np.loadtxt(file_path_follow,delimiter = ",")
     else :
         trajectory_to_follow=None
+    if file_centre_line != None:
+        centre_line = np.loadtxt(file_centre_line,delimiter = ",")
+    else :
+        centre_line=None
     traj_followed = []
     itr = 0
     total_itr=0
@@ -426,7 +431,8 @@ with rti.open_connector(
             # break
             curr_pos = [px,py,angle_heading,curr_speed]
             curr_pos = get_future_state_est(curr_pos,[curr_steering_array[:,1],np.array([25]*N)],curr_time_est)
-            path_array,centre_line_eq = get_path(px,py,angle_heading,trajectory_to_follow.tolist(),int(2*N),speed,T)
+            path_array,_ = get_path(px,py,angle_heading,trajectory_to_follow.tolist(),int(2*N),speed,T)
+            _,centre_line_eq = get_path(px,py,angle_heading,centre_line.tolist(),int(2*N),speed,T)
             curr_steering_array, target_speed_array = blackbox_controller(path_array,curr_pos)
             curr_steering = steering_*29/80
             print("Waiting here")
