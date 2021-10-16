@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 
 with rti.open_connector(
         config_name="MyParticipantLibrary::SpeedParticipant",
-        url=file_path + "Sensors_ego1.xml") as connector:
+        url=file_path + "/Sensors_ego1.xml") as connector:
 
     input = connector.get_input("StateSubscriber::stateReader")
     input_controls = connector.get_input("controlSubscriber::controlSub")

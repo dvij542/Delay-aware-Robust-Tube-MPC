@@ -204,7 +204,7 @@ def update_time_estimates(curr_time_est,curr_time_est_var,meas_time_est):
 
 with rti.open_connector(
         config_name="MyParticipantLibrary::ObstacleParticipant",
-        url=file_path + "Sensors_ego1.xml") as connector:
+        url=file_path + "/Sensors_ego1.xml") as connector:
     input_speed = connector.get_input("StateSubscriber::stateReader")
     controls = connector.get_output("controlPublisher::controlPub")
     wait_topic = connector.get_input("simWaitSub::simWaitReader")

@@ -1,0 +1,87 @@
+parameters:
+  ego_id: 3
+  manual_gear_change: False
+  gear_mode: 9 # 9 for race mode and 10 for drie mode
+  gear_change_engine_thres: 1000 # Threshold on engine speed to change gear (Only applicable for manual gear change)
+  start_throttle: 1 # Throttle to give at start
+  start_speed: 10 # Speed in m/s to give start_throttle
+
+  
+  Q_along: 6  # Weight for progress along the racing line
+  Q_drafting: 2 # Weight for aligning ego vehicle towards the back of lead vehicle 
+  Q_dist: 0  # Weight for distance from the racing line 
+  Q_steering_over_limit: 0 # Cost on steering over calculated limit which migh cause unstability (Not much effective and slows down)
+  Q_ang: 5 # Cost on angle difference from racing line
+  obs_dist: 100 # Cost to maintain from other vehicles at each time step
+  k_lat_slip: 0 # Cost on lateral slip
+  k_vel_follow: 3 # To follow the speed given by the racing line if current speed is greater than required speed
+  penalty_out_of_road: 6 # Penalise for planning path outside the track
+  tolerance: 1 # Tolerance distance to keep from left and right lane boundaries
+  dir_change_thres: 10 # Threshold to change the direction of overatake from the previously planned version
+  drafting_dist_x_max: 10 # Threshold distance to change objective from drafting to obstacle avoidance when relative velocity is vmax
+  drafting_dist_x_min: 4 # Threshold distance to change objective from drafting to obstacle avoidance when relative velocity is 0
+  drafting_dist_y: 3 # Threshold distance in perp direction to target vehicle to consider obstacle avoidance 
+  blocking_maneuver_cost: 0 # Cost to block vehicle behind (Not applicable now)
+  
+  
+  save_path_after: -1 # Save path after these no of iterations for visualization, -1 if path is not to be saved
+  file_path_follow: ./lap1.csv  # File to read the global reference line, if None then centre line will be taken
+  file_new_path: ./test.txt # File in which the new coordinates will be saved
+  
+  steering_ratio: 10 # Ratio of Steering angle to wheel angle  
+  moment_of_inertia: 504.7015 # Moment of inertia about the COM z axis
+  L: 2.9 # Length of vehicle
+  Lf: 1.66 # Distance of COM from front axle
+  Lr: 1.24 # Distance of COM from rear axle
+  vmax: 83.3
+  road_coeff: 0.8
+  mu_max: 0.8
+  mu_min: 0.72
+  degradation_dist: 81000
+  vehicle_length_r: 2 # Vehicle distance to perform blocking maneuver (Not currently applicable)
+  air_resistance_const: 0.45 # Air resistant wind force constant
+  mass: 591.23 # in Kg
+  no_iters: 3 # No of iterations to calculate perpendicular projection point on raceline. Increasing this will slow down the optimization but give precise projection point
+  max_no_of_vehicles: 10 # Max no of vehicles to consider for obstacle avoidance
+  max_vehicle_id: 20 # Max value of vehicle id  
+  T: .04 # Time horizon
+  N: 10 # Number of control intervals
+  kp: 1 # For PID controller
+  ki: 0
+  kd: 0
+  threshold: 20000
+  default_lane_width: 16
+  dist_threshold: 15
+  kp_start: 2
+  ki_start: 0.05
+  kd_start: 1.5
+  I_start: 1
+  lift_coeff: 1.0654835625000003
+  lift_coeff_r: 1.0654835625000003*0.912/(0.912+0.483)
+  lift_coeff_f: 1.0654835625000003*0.483/(0.912+0.483)
+  gravity_constant: 9.8
+  pdy1: 1.654
+  pdy2: -0.1783
+  fz0: 7056
+  epsilon: 0.0001
+  W: 2
+  
+  DCd0: 0.805
+  DCdx: 0.003
+  Dcdy: 0.0825
+
+  Dclf0: 0.69
+  Dclfx: 0.004
+  Dclfy: 0.11
+
+  Dclr0: 0.69
+  Dclrx: 0.004
+  Dclry: 0.135
+
+
+Gear Params:
+  gear_throttles: [7800,7400,5830,5150,4500,4400]
+  gear_change_speeds: [18.2,28.4,38.5,47,55.5,85]
+  gear_radiis: [0.05,0.056,0.0724,0.082,0.093,0.095]
+  gear_speed_l: [0,705,655,608,637,688]
+  gear_speed_r: [900,850,734,734,734,1000]
