@@ -373,6 +373,12 @@ This code contains trade secrets of Real-Time Innovations, Inc.
 
       <!-- The transform.py script reads Squares and writes Circles -->
         <domain_participant name="SpeedParticipant" domain_ref="MyDomainLibrary::MyDomain">
+            <publisher name="simDonePub">
+                <data_writer name="simDoneWriter" topic_ref="dds_done_reply1" />
+            </publisher>
+            <subscriber name="simWaitSub">
+                <data_reader name="simWaitReader" topic_ref="dds_done1" />
+            </subscriber>
             <subscriber name="controlSubscriber">
                 <data_reader name="controlSub" topic_ref="controls_ego1" />
             </subscriber>

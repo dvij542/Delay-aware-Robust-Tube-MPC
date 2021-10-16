@@ -16,7 +16,6 @@ sys_path.append(file_path + "/../../../")
 import rticonnextdds_connector as rti
 import numpy as np
 import math
-import matplotlib.pyplot as plt
 
 curr_index = 0
 last_index = -1
@@ -24,7 +23,8 @@ kp = 1
 curr_steerings = np.zeros(20)
 curr_speeds = np.zeros(20)
 file_new_path = "./path_with_comp.txt" # File in which the new coordinates will be saved
-save_path_after = 600
+save_path_after = -1
+import matplotlib.pyplot as plt
 
 with rti.open_connector(
         config_name="MyParticipantLibrary::SpeedParticipant",
@@ -89,7 +89,7 @@ with rti.open_connector(
             #print(target_speed-curr_speed)
             out['AcceleratorAdditive'] = max(0,target_speed)
             out['AcceleratorMultiplicative'] = 0
-            out['BrakeAdditive'] = -min(0,target_speed)
+            out['BrakeAdditive'] = -min(0,target_speed)*10*700
             out['BrakeMultiplicative'] = 0
             out['ClutchAdditive'] = 0
             out['ClutchMultiplicative'] = 0

@@ -81,6 +81,7 @@ def blackbox_controller(path,curr_pos) :
     steering = 2*L*dy/(dx**2+dy**2)
     steerings = [steering]*N
     speeds = path[:,-1]
+    print(steerings)
     return steerings, speeds
 
 def path_length_distance(a,b):
@@ -278,6 +279,7 @@ with rti.open_connector(
         if True :
             for sample in input_radar_F.samples.valid_data_iter:
                 data = sample.get_dictionary()
+                
                 for k in range(len(data['targetsArray'])):
                     all_vehicles[no_of_vehicles,0] = data['targetsArray'][k]['posXInChosenRef'] - 3.2
                     all_vehicles[no_of_vehicles,1] = data['targetsArray'][k]['posYInChosenRef']
@@ -314,7 +316,7 @@ with rti.open_connector(
             for sample in input_radar_left.samples.valid_data_iter:
                 data = sample.get_dictionary()
                 for k in range(len(data['targetsArray'])):
-                    if(data['targetsArray'][k]['posXInChosenRef']<0 or data['targetsArray'][k]['posXInChosenRef']>5) :
+                    if(data['targetsArray'][k]['posYInChosenRef']>-2 or data['targetsArray'][k]['posXInChosenRef']<0 or data['targetsArray'][k]['posXInChosenRef']>5) :
                         continue
                     all_vehicles[no_of_vehicles,0] = -data['targetsArray'][k]['posYInChosenRef']
                     all_vehicles[no_of_vehicles,1] = data['targetsArray'][k]['posXInChosenRef']
@@ -409,7 +411,7 @@ with rti.open_connector(
             # break
             curr_pos = [px,py,angle_heading,curr_speed]
             curr_pos = get_future_state_est(curr_pos,[curr_steering_array[:,1],np.array([25]*N)],curr_time_est)
-            path_array = get_path(px,py,trajectory_to_follow.tolist(),int(1.2*N),speed,T)
+            path_array = get_path(px,py,trajectory_to_follow.tolist(),int(2*N),speed,T)
             curr_steering_array, target_speed_array = blackbox_controller(path_array,curr_pos)
             curr_steering = steering_*29/80
             print("Waiting here")

@@ -5,8 +5,8 @@ import math
 
 T = .01
 N = 10
-safety_dist = 10
-K = (1-math.e**(-30*T))
+safety_dist = 8
+K = (1-math.e**(-30*T))/T
 gamma = 2
 
 x=SX.sym('x')
@@ -35,8 +35,8 @@ f=Function('f',[states,controls],[rhs])
 n_states=5
 n_controls=2
 U=SX.sym('U',n_controls+1,N)
-g=SX.sym('g',2*N)
-viol_amt = SX.sym('VV',N)
+g=SX.sym('g',N)
+viol_amt = SX.sym('V',N)
 viol_amt2 = SX.sym('VV',N)
 # P=SX.sym('P',1 + 2*N + 3 + 5)
 X=SX.sym('X',n_states,(N+1))
@@ -56,7 +56,7 @@ for k in range(0,N,1):
 obj=0
 Q=SX(5)
 R=SX(0)
-R2=SX(100)
+R2=SX(1000)
 R_viol = 10
 x_obs = P[-5]
 y_obs = P[-4]
@@ -67,17 +67,19 @@ for k in range(N) :
     x_obs_curr = x_obs + vx_obs*k*T
     y_obs_curr = y_obs + vy_obs*k*T
     # viol_amt[k] = g[k]-((X[0,k]-x_obs_curr)**2 + (X[0,k]-x_obs_curr)**2 - safety_dist**2)
-    h = (X[0,k]-x_obs_curr)**2 + 9*(X[1,k]-y_obs_curr)**2 - safety_dist**2
-    h_dot = 2*(X[0,k]-x_obs_curr)*(X[3,k]*cos(X[2,k])-vx_obs) + 2*9*(X[1,k]-y_obs_curr)*(X[3,k]*sin(X[2,k])-vy_obs)
+    h = (X[0,k]-x_obs_curr)**2 + 25*(X[1,k]-y_obs_curr)**2 - safety_dist**2
+    h_dot = 2*(X[0,k]-x_obs_curr)*(X[3,k]*cos(X[2,k])-vx_obs+2) + 2*25*(X[1,k]-y_obs_curr)*(X[3,k]*sin(X[2,k])-vy_obs+2)
+    # h_dot = 2*(X[0,k]-x_obs_curr)*(X[3,k]*cos(X[2,k])) + 2*9*(X[1,k]-y_obs_curr)*(X[3,k]*sin(X[2,k]))
     h_dot_dot = 2*(X[3,k]*cos(X[2,k])-vx_obs)**2 + 2*9*(X[3,k]*sin(X[2,k])-vy_obs)**2 \
                 + 2*(X[0,k]-x_obs_curr)*(U[0,k]*cos(X[2,k])-X[3,k]*sin(X[2,k])) + \
                 + 2*9*(X[1,k]-y_obs_curr)*(U[0,k]*sin(X[2,k])+X[3,k]*cos(X[2,k]))
     g[k] = h_dot + gamma*h + viol_amt[k]
-    g[k+N] = h_dot_dot + 2*gamma*h_dot + gamma*gamma*h + viol_amt2[k]
-    U[2,k] = viol_amt[k] + viol_amt2[k]
+    # g[k+N] = h_dot_dot + 2*gamma*h_dot + gamma*gamma*h + viol_amt2[k]
+    U[2,k] = viol_amt[k] #+ viol_amt2[k]
+    # U[3,k] = viol_amt[k] #+ viol_amt2[k]
 
 for k in range(N) :
-    obj = obj + Q*(P[k+1]-X[4,k])**2 + R*U[1,k]**2 + R2*(25-X[3,k])**2 + R_viol*viol_amt[k]**2
+    obj = obj + Q*(P[k+1]-X[4,k])**2 + R*U[1,k]**2 + R2*(60-X[3,k])**2 + R_viol*viol_amt[k]**2
 
 # for k in range(N-1) :
 #     obj = obj + R2*(U[k+1] - U[k])**2
@@ -119,7 +121,7 @@ for k in range (0,3*N,3):
     ubx_B[k]=1
 
 x0=np.random.rand(3*N)
-
+x0[1::3] = -0.15
 def get_optimal_commands(obstacle_data, comm_seq, curr_command, curr_speed) :
     p = [curr_command]
     for i in range(N) :
@@ -130,7 +132,7 @@ def get_optimal_commands(obstacle_data, comm_seq, curr_command, curr_speed) :
         break
     p.append(curr_speed)
     
-    sB = solverB(x0=x0,p=p,lbx=lbx_B,ubx=ubx_B,lbg=[0]*2*N)
+    sB = solverB(x0=x0,p=p,lbx=lbx_B,ubx=ubx_B,lbg=[0]*N)
     x = sB['x']
     u = reshape(x.T,3,N).T
     print("Violation distances : ", u)
