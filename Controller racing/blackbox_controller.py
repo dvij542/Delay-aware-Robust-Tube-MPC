@@ -22,7 +22,7 @@ has_start=True
 
 EPSILON = 0
 L=29
-
+opp_speed = 190*(5/18)
 ######### Global variables ##################
 
 predicted_x = 0
@@ -97,7 +97,7 @@ def calc_path_length(x_p):
             path_length.append(path_length[i-1] + path_length_distance(x_p[i], x_p[i-1]))
     return path_length
 
-def get_path(x_bot, y_bot, x_p, N,speed,T) :
+def get_path(x_bot, y_bot, theta_bot, x_p, N,speed,T) :
     out_path = []
     path_lengths = calc_path_length(x_p)
     distances = []    
@@ -188,7 +188,19 @@ def get_path(x_bot, y_bot, x_p, N,speed,T) :
         out_path.append(X)
         i = k-1
     # print(out_path)
-    return np.array(out_path)
+    X1 = out_path[0]
+    X2 = out_path[-1]
+    x1_,y1_ = X1[0]-x_bot,X1[1]-y_bot
+    x2_,y2_ = X2[0]-x_bot,X2[1]-y_bot
+    x1 = x1_*cos(theta_bot) + y1_*sin(theta_bot)
+    y1 = y1_*cos(theta_bot) - x1_*sin(theta_bot)
+    x2 = x2_*cos(theta_bot) + y2_*sin(theta_bot)
+    y2 = y2_*cos(theta_bot) - x2_*sin(theta_bot)
+    dist = ((y1-y2)**2 + (x2-x1)**2)**(1/2)
+    a = (y1-y2)/dist
+    b = (x2-x1)/dist
+    c = (y2*x1 - y1*x2)/dist
+    return np.array(out_path),[a,b,c]
     
 def get_future_state_est(current_pose,buff_con,curr_time_est) :
     if COMPENSATE_COMP_DELAY :
@@ -285,6 +297,9 @@ with rti.open_connector(
                     all_vehicles[no_of_vehicles,1] = data['targetsArray'][k]['posYInChosenRef']
                     all_vehicles[no_of_vehicles,2] = data['targetsArray'][k]['absoluteSpeedX']
                     all_vehicles[no_of_vehicles,3] = data['targetsArray'][k]['absoluteSpeedY']
+                    theta_heading = data['targetsArray'][k]['posHeadingInChosenRef']
+                    # all_vehicles[no_of_vehicles,2] = opp_speed*cos(theta_heading)
+                    # all_vehicles[no_of_vehicles,3] = opp_speed*sin(theta_heading)
                     opp_vehicle_detected[no_of_vehicles] = data['targetsArray'][k]['scanerId']
                     all_vehicles[no_of_vehicles,0], all_vehicles[no_of_vehicles,1] \
                         = utils.anchorPointToCenter(\
@@ -411,12 +426,12 @@ with rti.open_connector(
             # break
             curr_pos = [px,py,angle_heading,curr_speed]
             curr_pos = get_future_state_est(curr_pos,[curr_steering_array[:,1],np.array([25]*N)],curr_time_est)
-            path_array = get_path(px,py,trajectory_to_follow.tolist(),int(2*N),speed,T)
+            path_array,centre_line_eq = get_path(px,py,angle_heading,trajectory_to_follow.tolist(),int(2*N),speed,T)
             curr_steering_array, target_speed_array = blackbox_controller(path_array,curr_pos)
             curr_steering = steering_*29/80
             print("Waiting here")
             if COMPENSATE_ACTUATOR_DELAY :
-                curr_steering_array = np.array(lqrs.get_optimal_commands(all_vehicles, curr_steering_array,curr_steering,curr_pos[-1]))
+                curr_steering_array = np.array(lqrs.get_optimal_commands(all_vehicles, curr_steering_array,curr_steering,curr_pos[-1],centre_line_eq))
             print("Finished here")
             curr_steering = float(curr_steering_array[0,1])
             target_speed = float(curr_steering_array[0,0])
