@@ -8,7 +8,7 @@ N = 10
 safety_dist = 8
 K = (1-math.e**(-30*T))/T
 gamma = 2
-lane_len = 4
+lane_len = 60
 
 x=SX.sym('x')
 y=SX.sym('y')
@@ -59,7 +59,7 @@ Q=SX(5)
 R=SX(0)
 R2=SX(1000)
 R_viol = 10
-R_viol2 = 10
+R_viol2 = 0
 x_obs = P[-5]
 y_obs = P[-4]
 vx_obs = P[-3]
@@ -84,7 +84,7 @@ for k in range(N) :
     # U[3,k] = viol_amt[k] #+ viol_amt2[k]
 
 for k in range(N) :
-    obj = obj + Q*(P[k+1]-X[4,k])**2 + R*U[1,k]**2 + R2*(60-X[3,k])**2 + R_viol*viol_amt[k]**2 + R_viol*viol_amt2[k]**2
+    obj = obj + Q*(P[k+1]-X[4,k])**2 + R*U[1,k]**2 + R2*(60-X[3,k])**2 + R_viol2*viol_amt[k]**2 + R_viol2*viol_amt2[k]**2
 
 # for k in range(N-1) :
 #     obj = obj + R2*(U[k+1] - U[k])**2

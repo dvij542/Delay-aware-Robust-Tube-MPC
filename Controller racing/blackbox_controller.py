@@ -39,7 +39,7 @@ mass = 720 # in Kg
 tolerance = 2
 save_path_after = -1
 file_centre_line = "./lap1.csv"  # File to read the global reference line, if None then centre line will be taken
-file_path_follow = "./lap8.csv"  # File to read the global reference line, if None then centre line will be taken
+file_path_follow = "./lap2.csv"  # File to read the global reference line, if None then centre line will be taken
 file_new_path = "./coordinates_nc2.txt" # File in which the new coordinates will be saved
 Q_along=2  # Weight for progress along the road
 Q_dist=0  # Weight for distance for the center of the road
@@ -60,11 +60,11 @@ speed = 30
 factor = 10
 #Initialisation
 
-curr_time_est = 0.3
+curr_time_est = 0.05
 curr_time_est_var = 1
 var_factor = 0.001
 noise_to_process_var = 1
-COMPENSATE_COMP_DELAY = False 
+COMPENSATE_COMP_DELAY = True 
 COMPENSATE_ACTUATOR_DELAY = True
 
 def dist1(x1,y1,x2,y2):
@@ -205,6 +205,7 @@ def get_path(x_bot, y_bot, theta_bot, x_p, N,speed,T) :
     
 def get_future_state_est(current_pose,buff_con,curr_time_est) :
     if COMPENSATE_COMP_DELAY :
+        curr_time_est += 0.1
         return np.array(current_pose) + np.array([current_pose[3]*cos(current_pose[2]),current_pose[3]*sin(current_pose[2]),current_pose[3]*10*tan(buff_con[0][0]/10)/L,0])*curr_time_est/factor
     else :
         return np.array(current_pose)
