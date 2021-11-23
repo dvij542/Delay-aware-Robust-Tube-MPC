@@ -102,7 +102,7 @@ if True :
             v*sin(theta+EPSILON),
             v*tan(delta_ac+K*(delta-delta_ac)*T/2)/L,
             Ka*pedal+Kf,
-            K*(delta-delta_ac)
+            K*sign(delta-delta_ac)
         ]                                            
     rhs=vertcat(*rhs)
     f=Function('f',[states,controls],[rhs])
