@@ -74,19 +74,9 @@ def prius_pub():
         i = i + 1
     if i!= 0 :
         i = i - 1
-        dx = curr_x - buffer_cmd[i].pose.orientation.x
-        dy = curr_y - buffer_cmd[i].pose.orientation.y
-        # udy = dx*math.cos(curr_yaw) - dy*math.sin(curr_yaw)
-        dyaw = curr_yaw - buffer_cmd[i].pose.orientation.z
-        dvel = curr_speed - buffer_cmd[i].pose.orientation.w
-        dsteer = curr_steering - (buffer_cmd[i].header.stamp.secs/1000 - 2)
-        # curr_state_diff = np.matrix(np.array([[dx],[dy],[dvel],[dyaw],[dsteer]]))
-        # K_mat = get_K(0.1,curr_yaw,curr_speed,Q_robust,R_robust,N)
-        # correction = K_mat*curr_state_diff
-        # print(correction)
-        prius_vel.steer = (buffer_cmd[i].pose.position.x) / 40# - (180/math.pi)*correction[1,0]) / 40
-        prius_vel.throttle = max(0,buffer_cmd[i].pose.position.z) # + correction[0,0]
-        prius_vel.brake = -min(0,buffer_cmd[i].pose.position.z) # + correction[0,0]
+        prius_vel.steer = (buffer_cmd[i].pose.position.x) / 40
+        prius_vel.throttle = max(0,buffer_cmd[i].pose.position.z)
+        prius_vel.brake = -min(0,buffer_cmd[i].pose.position.z)
 
     else :
         rospy.sleep(buffer_cmd[0].pose.position.y - curr_time)
