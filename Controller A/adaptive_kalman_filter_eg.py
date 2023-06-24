@@ -2,11 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-times = np.loadtxt('computation_times1.csv')
+times_ = np.loadtxt('times.txt',delimiter=',')
 
 w_bar = 0
 e_bar = 0
-x_hat = times[0,1]
+x_hat = times_[0]
+print(x_hat)
 # print(x_hat)
 P = 0
 Nr = 30
@@ -18,8 +19,9 @@ alpha_1 = (Nr-1)/Nr
 alpha_2 = (Nq-1)/Nq
 i = 1
 beta = 5
-times[0,0] = times[0,1]
-times[0,2] = times[0,1]
+times = np.zeros((times_.shape[0]+1,3))
+times[0,0] = times_[0]
+times[0,2] = times_[0]
 Theta = np.array([[1], 
                   [0]])
 F = np.array([[1, 0], 
@@ -27,16 +29,19 @@ F = np.array([[1, 0],
 Nt = 30
 forgetting_factor = (Nt-1)/Nt
 
-for z in times[1:,1] :
-    print(Theta[0,0], Theta[1,0])
+for z in times_ :
+    # print(Theta[0,0], Theta[1,0])
     x_hat_bar = Theta[0,0]*x_hat + Theta[1,0]
     times[i,0] = x_hat_bar
     times[i,2] = x_hat_bar + beta*math.sqrt(P)
     A = Theta[0,0]
     P_bar = A*P*A + Q
+    # print(z,x_hat_bar)
     e = z - x_hat_bar
     e_bar = alpha_1*e_bar + (1-alpha_1)*e
+    # print(e,e_bar,P_bar)
     delta_R = (1/(Nr-1))*(e-e_bar)**2 - (1/Nr)*P_bar
+    # print(alpha_1,R,delta_R)
     R = math.fabs(alpha_1*R + delta_R)
     K = P_bar/(P_bar+R)
     x_hat = x_hat_bar + K*e
@@ -84,15 +89,15 @@ for z in times[1:,1] :
 #     i+=1
 
 print("Completed")
-plt.plot((times[:,3]-times[0,3]), times[:,0]*1000, label="Predicted computation time")
-plt.plot((times[:,3]-times[0,3]), times[:,1]*1000, label="Actual computation time")
-plt.plot((times[:,3]-times[0,3]), times[:,2]*1000, label="Computation time taken")
+plt.plot(times[:,0]*1000, label="Predicted computation time")
+plt.plot(times_*1000, label="Actual computation time")
+plt.plot(times[:,2]*1000, label="Computation time taken")
 # plt.plot(times_dash[:,3], times_dash[:,0], label="Predicted computation time with Q = 0.0004")
 # plt.plot(times_dash[:,3], times_dash[:,2], label="Computation time taken with R = 0.0004")
 
 plt.ylim([0,100])
 # plt.title("Predicted vs actual computation time")
-plt.xlabel("ROS time (in s)")
+plt.xlabel("Iteration")
 plt.ylabel("Computation time (in ms)")
 plt.legend()
 plt.savefig("computation_time_final.png", format='png')

@@ -5,18 +5,24 @@ import torch
 from torch.optim import Adam,SGD
 from casadi import *
 import tqdm
-lr = 0.01
-L = 3
-Ka = 4.25
-Kf = -0.25
 
+# Model parameters
+L = 3 # Length of the vehicle
+Ka = 4.25 # Ax = Ka*pedal_amount + Kf
+Kf = -0.25
+mu = 1 # Coefficient of friction
+g_constant = 9.8
+
+lr = 0.01 # Learning rate
+
+MAKE_DATASET = True
 TRAIN = True 
+
 control_count=0
 has_start=True
+
 T = .1 # Time horizon
-N = 5# number of control intervals
-mu = 1
-g_constant = 9.8
+N = 5 # Number of control intervals
 
 ###########   states    ####################
 x=SX.sym('x')
@@ -29,13 +35,14 @@ delta=SX.sym('delta')
 controls=vertcat(a,delta)
 EPSILON = 1e-5
 
+# Bicycle model
 rhs=[
         v*cos(theta),
         v*sin(theta),
         v*(tan(delta))/L,
         Ka*a+Kf
     ]                               
-                                                    
+                                                   
 rhs=vertcat(*rhs)
 f=Function('f',[states,controls],[rhs])
 #print(f)
@@ -57,15 +64,16 @@ for k in range(0,N,1):
 ff=Function('ff',[U,P],[X])
 obj=0
 
-Q=SX([[10,0,0,0],
-    [0,10,0,0],
-    [0,0,0,0],
-    [0,0,0,5]])
+Q=SX([[10,0 ,0 ,0 ],
+      [0 ,10,0 ,0 ],
+      [0 ,0 ,0 ,0 ],
+      [0 ,0 ,0 ,5 ]])
 R=SX([[1,0],
-    [0,1]])
-R2=SX([[100,0],
-    [0,0]])
+      [0,1]])
+R2=SX([[100,0  ],
+       [0  ,0  ]])
 
+# Define bjective function for MPC
 for k in range(N-1,N,1):
     st=X[:,k+1]
     con=U[:,k]
@@ -79,6 +87,7 @@ for k in range(0,N-1,1) :
 opt_variables=vertcat(U)
 OPT_variables = reshape(U,2*N,1)
 
+# Constraint Ay (|Ay_max| = mu*g)
 for k in range (1,N+1,1): 
     g[k-1] = X[3,k]**2 * tan(U[1,k-1]) / L
     
@@ -117,6 +126,7 @@ u0=np.random.rand(N,n_controls)
 x0=reshape(u0,n_controls*N,1)
 
 
+# Modify this to generate input samples for training according to the requirement
 def get_input_set(batch_size) :
     X = torch.rand(batch_size,5)
     vels =  0 + 25*torch.rand(batch_size)
@@ -151,10 +161,9 @@ def get_gt(x) :
         else :
             steering = max(max(2*L*dY/(dX**2 + dY**2),-2*atan(mu*g_constant*L/(v_init**2))),-math.pi/4.5)
 
-        sols.append([float(out[0,0]),steering])
+        sols.append([float(out[0,0]),float(out[0,1])])
     return torch.tensor(np.array(sols))
-    # return 2*L*dY/(dX**2 + dY**2)
-
+    
 class model_waypoint(nn.Module):
     def __init__(self,layer_sizes):
         super().__init__()
@@ -193,13 +202,14 @@ def main() :
     batch_size = 256
     no_batches = 200
     print("Making dataset !!!")
-    # make_dataset(no_batches,batch_size)
+    if MAKE_DATASET :
+        make_dataset(no_batches,batch_size)
     X = torch.load('data_X.pkl')
     Y = torch.load('data_Y.pkl')
-    model = model_waypoint(layer_sizes=[8,16,4])
+    model = model_waypoint(layer_sizes=[8,16,8,4])
     if TRAIN : 
         model.train()
-        optimizer = Adam(model.parameters(), lr=0.01)
+        optimizer = Adam(model.parameters(), lr=lr)
         # overall_loss = 0
         for n in range(no_epochs):
             for i in range(no_batches) :

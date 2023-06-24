@@ -1,0 +1,138 @@
+from turtle import width
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+
+from FrenetOptimalTrajectory.frenet_optimal_trajectory import *
+
+traj_without_comp = np.loadtxt('trajectory_without_comp.csv')
+traj_with_comp = np.loadtxt('trajectory_without_comp.csv')
+traj_opp_without_comp = np.loadtxt('trajectory_opp_without_comp.csv')
+traj_opp_with_comp = np.loadtxt('trajectory_opp_without_comp.csv')
+
+traj_without_comp[:,1] = -traj_without_comp[:,1] + 229.0
+traj_with_comp[:,1] = -traj_with_comp[:,1] + 229.0
+traj_opp_without_comp[:,1] = -traj_opp_without_comp[:,1] + 229.0
+traj_opp_with_comp[:,1] = -traj_opp_with_comp[:,1] + 229.0
+with_i = 0
+# while traj_with_comp[-with_i,0]<-100 :
+#     with_i+=1
+without_i = 0
+# while traj_without_comp[-without_i,0]<-100 :
+#     without_i+=1
+
+veh_dims = np.array([[-1.6,-0.9],[-1.6,0.9],[1.6,0.9],[1.6,-0.9],[-1.6,-0.9]])
+
+def plot_vehicle(x,y,theta,color='blue') :
+    rot_mat = np.array([[math.cos(theta),math.sin(theta)],[-math.sin(theta),math.cos(theta)]])
+    points = np.array([[x,y]]) + np.matmul(veh_dims,rot_mat)
+    plt.plot(points[:,0],points[:,1],color=color)
+
+start_i = 13
+end_i = 18
+# traj_with_comp = traj_with_comp[:-with_i+2]
+# traj_without_comp = traj_without_comp[:-without_i+2]
+
+for i in range(start_i,end_i) :
+    x,y,theta = traj_with_comp[i,0],traj_with_comp[i,1],math.atan2(traj_with_comp[i+1,1]-traj_with_comp[i,1],traj_with_comp[i+1,0]-traj_with_comp[i,0])
+    plot_vehicle(x,y,theta,color='purple')
+    x,y,theta = traj_opp_with_comp[i,0],traj_opp_with_comp[i,1],math.atan2(traj_opp_with_comp[i+1,1]-traj_opp_with_comp[i,1],traj_opp_with_comp[i+1,0]-traj_opp_with_comp[i,0])
+    plot_vehicle(x,y,theta,color='red')
+
+start_i = 26
+end_i = 31
+# traj_with_comp = traj_with_comp[:-with_i+2]
+# traj_without_comp = traj_without_comp[:-without_i+2]
+
+for i in range(start_i,end_i) :
+    x,y,theta = traj_with_comp[i,0],traj_with_comp[i,1],math.atan2(traj_with_comp[i+1,1]-traj_with_comp[i,1],traj_with_comp[i+1,0]-traj_with_comp[i,0])
+    plot_vehicle(x,y,theta,color='purple')
+    x,y,theta = traj_opp_with_comp[i,0],traj_opp_with_comp[i,1],math.atan2(traj_opp_with_comp[i+1,1]-traj_opp_with_comp[i,1],traj_opp_with_comp[i+1,0]-traj_opp_with_comp[i,0])
+    plot_vehicle(x,y,theta,color='red')
+
+# start_i = 100
+# end_i = 200
+
+# for i in range(start_i,end_i) :
+#     x,y,theta = traj_without_comp[i,0],traj_without_comp[i,1],math.atan2(traj_without_comp[i+1,1]-traj_without_comp[i,1],traj_without_comp[i+1,0]-traj_without_comp[i,0])
+#     plot_vehicle(x,y,theta,color='red')
+
+# left_boundary = np.loadtxt('left_boundary_with_comp.csv')
+# right_boundary = np.loadtxt('right_boundary_with_comp.csv')
+opt_racing_line = np.loadtxt('../waypoints_new.csv',delimiter=',')
+
+file_centre_line='../racetrack_waypoints.txt'
+if file_centre_line != None:
+    centre_line = np.loadtxt(file_centre_line,delimiter = ",")
+else :
+    centre_line=None
+centre_line[:,1] = -centre_line[:,1]
+tx_center, ty_center, tyaw_center, tc_center, ts_center, csp_center = generate_target_course(centre_line[:,0], centre_line[:,1])
+
+# plt.plot(left_boundary)
+# plt.plot(right_boundary)
+
+# Start line
+plt.plot([-372,-358],[65,65],linewidth=5.0,color='green')#,marker='o')
+plt.text(-355,65,'Start line')
+
+# Finish line
+plt.plot([-100,-100],[-25,-5],linewidth=5.0,color='red')#,marker='o')
+plt.text(-100,-25,'End line')
+
+# plt.plot(-372,65,-358,65,marker='o',size=5)
+
+left_boundary = np.array([tx_center+5.2*np.sin(tyaw_center),ty_center-5.2*np.cos(tyaw_center)]).T
+start_i = 508
+end_i = 540
+x1,y1,x2,y2 = left_boundary[start_i,0],left_boundary[start_i,1],left_boundary[end_i,0],left_boundary[end_i,1]
+for i in range(start_i,end_i) :
+    theta = (i-start_i)/(end_i-start_i)*(math.pi/2)
+    x,y = x1 + (x2-x1)*math.sin(theta), y2 + (y1-y2)*math.cos(theta) 
+    # x,y = ((i-start_i)*x2 + (end_i-i)*x1)/(end_i-start_i),((i-start_i)*y2 + (end_i-i)*y1)/(end_i-start_i)
+    left_boundary[i,0] = x
+    left_boundary[i,1] = y
+right_boundary = np.array([tx_center-5.2*np.sin(tyaw_center),ty_center+5.2*np.cos(tyaw_center)]).T
+left_boundary[:,1] = -left_boundary[:,1] + 229
+right_boundary[:,1] = -right_boundary[:,1] + 229
+opt_racing_line[:,1] = -opt_racing_line[:,1]
+opt_racing_line[:,1] = -opt_racing_line[:,1] + 229
+plt.plot(opt_racing_line[:,0],opt_racing_line[:,1],'--',label="Optimal racing line")
+plt.plot(right_boundary[:,0],right_boundary[:,1],'--',label="Track right boundary")
+plt.plot(left_boundary[:,0],left_boundary[:,1],'--',label="Track left boundary")
+plt.plot(traj_with_comp[:,0],traj_with_comp[:,1],'-',label="Ego",color='purple')
+plt.plot(traj_opp_with_comp[:,0],traj_opp_with_comp[:,1],'-',label="Opponent",color='red')
+
+plt.xlabel("X")
+plt.ylabel("Y")
+# plt.title("Comparision in LTV NMPC path tracking with and without \n delay compensation for computation time")
+# plt.legend()
+plt.axis('equal')
+plt.legend()
+# plt.savefig("with_comp_const.png", format='png')
+plt.show()
+
+# speeds_without_comp = np.loadtxt('forward_speed_without_comp.csv')[:-without_i+2]
+# ref_speeds_without_comp = np.loadtxt('reference_signal_without_comp.csv')[:-without_i+2]
+
+# plt.plot(ref_speeds_without_comp[:,0],ref_speeds_without_comp[:,1],'--',label="Reference speed")
+# plt.plot(speeds_without_comp[:,0],speeds_without_comp[:,1],'-',label="Speeds without delay compensation")
+
+# plt.xlabel("time (in s)")
+# plt.ylabel("speed (in m/s)")
+# plt.ylim(0,35)
+# plt.legend()
+# plt.show()
+
+# speeds_with_comp = np.loadtxt('forward_speed.csv')[:-with_i+2]
+# ref_speeds_with_comp = np.loadtxt('reference_signal.csv')[:-with_i+2]
+
+# plt.plot(ref_speeds_with_comp[:,0],ref_speeds_with_comp[:,1],'--',label="Reference speed")
+# plt.plot(speeds_with_comp[:,0],speeds_with_comp[:,1],'-',label="Speeds with delay compensation")
+
+# plt.xlabel("time (in s)")
+# plt.ylabel("speed (in m/s)")
+# plt.ylim(0,35)
+# plt.legend()
+# plt.show()
