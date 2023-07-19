@@ -31,3 +31,58 @@ The codes for :-
 
 ## Steps to run 2nd work simulations
 
+1. Set up carla(>=0.9.7, tested on 0.9.8) under 'Controller racing A' directory
+2. Install additional map Town07 following the instructions from :-
+  
+### Plan A experiments
+1. Change directory to 'Controller racing A'
+```
+cd Controller\ racing\ A
+```
+2. (optional) Invariant set has already been pre-calculated, but if needed to recalculate for different parameters, change parameters in header file of inv_set_calc.py and run:-
+```
+python inv_set_calc.py
+```
+3. In each new terminal from now on, source ros at the beginning. In a new terminal run :-
+```
+roscore
+``` 
+4. In a new terminal, launch carla, make sure Town07 map is installed. 
+5. Set SCENE='standalone' for experiment 2, 'one_vehicle' for experiment 3, 'one_vehicle_turn' for experiment 4 in carla_utils.py
+6. In a new terminal, for experiment 2, set hyperparameters in header of mpc_robust_frenet_without_obstacles.py as required and run :-
+```
+python mpc_robust_frenet_without_obstacles.py 
+```  
+For experiment 3 and 4, change hyperparameters in header of mpc_robust_frenet.py and run :-
+```
+python mpc_robust_frenet.py 
+```
+7. In a new terminal, launch :-
+```
+python pre_compensator.py
+``` 
+The vehicle should be moving at this point. The experimental result files and plots should be saved at the end of the experiment under 'outputs_<scenario name>' folder with suffix 'with_comp' and 'without_comp' respectively based on if delay compensation is enabled or not in header of mpc_robust_frenet_without_obstacles.py or mpc_robust_frenet.py accordingly
+
+### Plan B experiments
+1. Change directory to 'Controller racing B'
+```
+cd Controller\ racing\ B
+```
+2. In each new terminal from now on, source ros at the beginning. In a new terminal run :-
+```
+roscore
+``` 
+3. In a new terminal, launch carla, make sure Town07 map is installed. 
+4. Set SCENE='standalone' for experiment 1, 'one_vehicle' for experiment 3, 'one_vehicle_turn' for experiment 4 in carla_utils.py
+5. In a new terminal, for experiment 2, set hyperparameters in header of mpc_robust_frenet_without_obstacles.py as required and run :-
+```
+python mpc_robust_frenet_without_obstacles.py 
+```  
+For experiment 3 and 4, change hyperparameters in header of mpc_robust_frenet.py and run :-
+```
+python mpc_robust_frenet.py 
+```
+6. In a new terminal, launch :-
+```
+python pre_compensator.py
+``` 
