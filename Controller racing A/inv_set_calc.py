@@ -243,57 +243,57 @@ N = 8
 # print(get_K(0.1,0,20,Q_robust,R_robust,N))
 # vy = 5
 # phi = 0.5
-# e1_maxess = []
-# e2_maxess = []
-# s_maxess = []
-# steering_maxess = []
-# a_maxess = []
-# fig, ax = plt.subplots()
-# for curvature in np.arange(0,0.09,0.03) :
-#     e1_maxes = []
-#     e2_maxes = []
-#     s_maxes = []
-#     a_maxes = []
-#     steering_maxes = []
-#     for vel in tqdm.tqdm(np.arange(10,30,2)) :
-#         e1_max,e2_max,s_max,a_max,steering_max = get_inv_set_test(0.05,curvature,vy,phi,vel,np.matrix(np.diag(np.array([1]*5))),np.matrix(np.diag(np.array([0.1,0.1]))),8)
-#         e1_maxes.append([vel,e1_max])
-#         e2_maxes.append([vel,e2_max])
-#         s_maxes.append([vel,s_max])
-#         a_maxes.append([vel,a_max])
-#         steering_maxes.append([vel,steering_max])
-#     e1_maxess.append(e1_maxes)
-#     e2_maxess.append(e2_maxes)
-#     s_maxess.append(s_maxes)
-#     steering_maxess.append(steering_maxes)
-#     a_maxess.append(a_maxes)
-#     # print(e1_maxes)
-#     plt.plot(np.array(e1_maxes)[:,0],np.array(e1_maxes)[:,1], label='e1-lim for curvature='+str(curvature))
-#     plt.plot(np.array(e2_maxes)[:,0],np.array(e2_maxes)[:,1], label='e2-lim for curvature='+str(curvature))
-#     plt.plot(np.array(s_maxes)[:,0],np.array(s_maxes)[:,1], label='s-lim for curvature='+str(curvature))
+e1_maxess = []
+e2_maxess = []
+s_maxess = []
+steering_maxess = []
+a_maxess = []
+fig, ax = plt.subplots()
+for curvature in np.arange(0,0.09,0.03) :
+    e1_maxes = []
+    e2_maxes = []
+    s_maxes = []
+    a_maxes = []
+    steering_maxes = []
+    for vel in tqdm.tqdm(np.arange(10,30,2)) :
+        e1_max,e2_max,s_max,a_max,steering_max = get_inv_set_test(0.05,curvature,vy,phi,vel,np.matrix(np.diag(np.array([1]*5))),np.matrix(np.diag(np.array([0.1,0.1]))),8)
+        e1_maxes.append([vel,e1_max])
+        e2_maxes.append([vel,e2_max])
+        s_maxes.append([vel,s_max])
+        a_maxes.append([vel,a_max])
+        steering_maxes.append([vel,steering_max])
+    e1_maxess.append(e1_maxes)
+    e2_maxess.append(e2_maxes)
+    s_maxess.append(s_maxes)
+    steering_maxess.append(steering_maxes)
+    a_maxess.append(a_maxes)
+    # print(e1_maxes)
+    plt.plot(np.array(e1_maxes)[:,0],np.array(e1_maxes)[:,1], label='e1-lim for curvature='+str(curvature))
+    plt.plot(np.array(e2_maxes)[:,0],np.array(e2_maxes)[:,1], label='e2-lim for curvature='+str(curvature))
+    plt.plot(np.array(s_maxes)[:,0],np.array(s_maxes)[:,1], label='s-lim for curvature='+str(curvature))
 
-#     # plt.plot(np.array(a_maxes)[:,0],np.array(a_maxes)[:,1], label='a-lim for curvature='+str(curvature))
-#     # plt.plot(np.array(steering_maxes)[:,0],np.array(steering_maxes)[:,1], label='steering-lim for curvature='+str(curvature))
-#     # plt.show()
+    # plt.plot(np.array(a_maxes)[:,0],np.array(a_maxes)[:,1], label='a-lim for curvature='+str(curvature))
+    # plt.plot(np.array(steering_maxes)[:,0],np.array(steering_maxes)[:,1], label='steering-lim for curvature='+str(curvature))
+    # plt.show()
 
-# plt.legend()
-# plt.xlabel("Speed")
-# # plt.ylim([0,0.08])
-# plt.ylabel("Lim")
-# plt.title('vy : ' + str(vy) + " omega : " + str(phi))
-# # print(steering_maxes)
-# # print(a_maxes)
-# # # plt.plot(np.arange(0,0.5,0.1),a_maxes)
-# # # plt.plot(np.arange(0,0.5,0.1),steering_maxes)
-# e1_maxess = np.array(e1_maxess)
-# e2_maxess = np.array(e2_maxess)
-# s_maxess = np.array(s_maxess)
-# steering_maxess = np.array(steering_maxess)
-# a_maxess = np.array(a_maxess)
-# plt.savefig('outputs/errors_4.png')
-# plt.show()
-# np.savetxt('outputs/e1_maxess.csv',e1_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
-# np.savetxt('outputs/e2_maxess.csv',e2_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
-# np.savetxt('outputs/s_maxess.csv',s_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
-# np.savetxt('outputs/a_maxess.csv',a_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
-# np.savetxt('outputs/steering_maxess.csv',steering_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
+plt.legend()
+plt.xlabel("Speed")
+# plt.ylim([0,0.08])
+plt.ylabel("Lim")
+plt.title('vy : ' + str(vy) + " omega : " + str(phi))
+# print(steering_maxes)
+# print(a_maxes)
+# # plt.plot(np.arange(0,0.5,0.1),a_maxes)
+# # plt.plot(np.arange(0,0.5,0.1),steering_maxes)
+e1_maxess = np.array(e1_maxess)
+e2_maxess = np.array(e2_maxess)
+s_maxess = np.array(s_maxess)
+steering_maxess = np.array(steering_maxess)
+a_maxess = np.array(a_maxess)
+plt.savefig('outputs/errors_4.png')
+plt.show()
+np.savetxt('outputs/e1_maxess.csv',e1_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
+np.savetxt('outputs/e2_maxess.csv',e2_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
+np.savetxt('outputs/s_maxess.csv',s_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
+np.savetxt('outputs/a_maxess.csv',a_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
+np.savetxt('outputs/steering_maxess.csv',steering_maxess.reshape(e1_maxess.shape[0],e1_maxess.shape[1]*e1_maxess.shape[2]))
