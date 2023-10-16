@@ -200,32 +200,32 @@ R_robust = np.matrix(np.diag(np.array([1,1])))
 N = 8
 
 print(get_K(0.1,0,5,Q_robust,R_robust,N))
-# x_maxess = []
-# y_maxess = []
-# a_maxess = []
-# steering_maxess = []
-# fig, ax = plt.subplots()
-# for phi in np.arange(0,0.5,0.1) :
-#     x_maxes = []
-#     y_maxes = []
-#     a_maxes = []
-#     steering_maxes = []
-#     for vel in tqdm.tqdm(np.arange(1,10,0.5)) :
-#         x_max,y_max,a_max,steering_max = get_inv_set_test(0.1,0,phi,vel,np.matrix(np.diag(np.array([1,1,1,1]))),np.matrix(np.diag(np.array([0.1,0.1]))),8)
-#         x_maxes.append(x_max)
-#         y_maxes.append(y_max)
-#         a_maxes.append(a_max)
-#         steering_maxes.append(steering_max)
-#     x_maxess.append(x_maxes)
-#     y_maxess.append(y_maxes)
-#     plt.plot(np.arange(1,10,0.5),x_maxes, label='x-lim for phi='+str(phi))
-#     plt.plot(np.arange(1,10,0.5),y_maxes, label='y-lim for phi='+str(phi))
+x_maxess = []
+y_maxess = []
+a_maxess = []
+steering_maxess = []
+fig, ax = plt.subplots()
+for phi in np.arange(0,0.5,0.1) :
+    x_maxes = []
+    y_maxes = []
+    a_maxes = []
+    steering_maxes = []
+    for vel in tqdm.tqdm(np.arange(1,10,0.5)) :
+        x_max,y_max,a_max,steering_max = get_inv_set_test(0.1,0,phi,vel,np.matrix(np.diag(np.array([1,1,1,1]))),np.matrix(np.diag(np.array([0.1,0.1]))),8)
+        x_maxes.append(x_max)
+        y_maxes.append(y_max)
+        a_maxes.append(a_max)
+        steering_maxes.append(steering_max)
+    x_maxess.append(x_maxes)
+    y_maxess.append(y_maxes)
+    plt.plot(np.arange(1,10,0.5),x_maxes, label='x-lim for phi='+str(phi))
+    plt.plot(np.arange(1,10,0.5),y_maxes, label='y-lim for phi='+str(phi))
 
-# plt.legend()
-# plt.xlabel("Speed")
-# plt.ylim([0,0.1])
-# # print(steering_maxes)
-# # print(a_maxes)
+plt.legend()
+plt.xlabel("Speed")
+plt.ylim([0,0.1])
+# print(steering_maxes)
+# print(a_maxes)
 # # plt.plot(np.arange(0,0.5,0.1),a_maxes)
 # # plt.plot(np.arange(0,0.5,0.1),steering_maxes)
 
