@@ -208,7 +208,7 @@ def get_inv_set_test(DT,curvature,vy,phi,v,Q,R,N) :
         Mul = np.matrix(np.diag(np.array([1,1,1,1,1,1])))
     
     # print(Ak)
-    for i in range(3) :
+    for i in range(8) :
         # print(i,len(Z.V))
         Mul = Mul*Ak 
         Z = Z + Mul*w
