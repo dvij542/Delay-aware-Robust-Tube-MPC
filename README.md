@@ -4,6 +4,8 @@ The codes for :-
 1. [Delay aware robust control for safe autonomous driving](https://ieeexplore.ieee.org/document/9827111) 
 2. [Delay aware robust control for safe autonomous driving and racing](https://arxiv.org/abs/2208.13856)
 
+NOTE : There are some notation errors in our IEEE IV conference paper (1). The original non-linear model is linearized around the current state at every time step into a linear system. However, in the MPC's prediction horizon, we assume time-invariant dynamics. An updated version can be found here : [Updated arxiv version](https://arxiv.org/abs/2109.07101) 
+
 ## Folder structure
 
 - Controller A/ and Controller B/ : All the code files for Controller A and B implementation of [Delay aware robust control for safe autonomous driving](https://ieeexplore.ieee.org/document/9827111) which includes delay aware robust tube MPC formulation for global frame of reference with simulations in ROS Gazebo
