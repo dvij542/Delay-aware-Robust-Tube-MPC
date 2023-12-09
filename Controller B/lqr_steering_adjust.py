@@ -20,7 +20,7 @@ X[0] = P[0]
 X[1] = P[0] + K*(U[0]-P[0])
 
 for k in range(1,N-1,1) :
-    X[k+1] = X[k] + K*(U[k]-X[k]) + K*(U[k+1]-(X[k] + K*(U[k]-X[k])))
+    X[k+1] = X[k] + K*sign(U[k]-X[k]) + K*sign(U[k+1]-(X[k] + K*sign(U[k]-X[k])))
 
 obj=0
 Q=SX(5)
